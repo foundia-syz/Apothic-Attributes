@@ -1,3 +1,8 @@
+## 2.1.2
+* Removed leftover code from the transition to neo's flying attribute.
+* Repackaged `.mobfx` to `.mob_effect`.
+* Updated potion tooltip formatting.
+
 ## 2.1.1
 * Fixed some things that missed the modid transition.
 * Fixed tridents not respecting the arrow damage attribute.
