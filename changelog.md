@@ -1,3 +1,6 @@
+## 1.3.5
+* Updated Potion tooltips to not look so out-of-place.
+
 ## 1.3.4
 * Fixed tridents not respecting the arrow damage attribute.
 
