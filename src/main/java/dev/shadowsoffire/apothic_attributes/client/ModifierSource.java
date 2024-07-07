@@ -10,10 +10,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.MobEffectTextureManager;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -59,7 +60,11 @@ public abstract class ModifierSource<T> implements Comparable<ModifierSource<T>>
 
         @SuppressWarnings("deprecation")
         public ItemModifierSource(ItemStack data) {
-            super(ModifierSourceType.EQUIPMENT, Comparator.comparing(LivingEntity::getEquipmentSlotForItem).reversed().thenComparing(Comparator.comparing(ItemStack::getItem, Comparators.idComparator(BuiltInRegistries.ITEM))), data);
+            super(ModifierSourceType.EQUIPMENT,
+                Comparator.comparing(Minecraft.getInstance().player::getEquipmentSlotForItem)
+                    .reversed()
+                    .thenComparing(Comparator.comparing(ItemStack::getItem, Comparators.idComparator(BuiltInRegistries.ITEM))),
+                data);
         }
 
         @Override
@@ -79,7 +84,7 @@ public abstract class ModifierSource<T> implements Comparable<ModifierSource<T>>
 
         @SuppressWarnings("deprecation")
         public EffectModifierSource(MobEffectInstance data) {
-            super(ModifierSourceType.MOB_EFFECT, Comparator.comparing(MobEffectInstance::getEffect, Comparators.idComparator(BuiltInRegistries.MOB_EFFECT)), data);
+            super(ModifierSourceType.MOB_EFFECT, Comparator.comparing(inst -> inst.getEffect().unwrapKey().get(), ResourceKey::compareTo), data);
         }
 
         @Override
@@ -91,15 +96,15 @@ public abstract class ModifierSource<T> implements Comparable<ModifierSource<T>>
             // i += pYOffset;
             // continue;
             // }
-            MobEffect effect = this.data.getEffect();
-                TextureAtlasSprite sprite = texMgr.get(effect);
-                float scale = 0.5F;
-                PoseStack stack = gfx.pose();
-                stack.pushPose();
-                stack.scale(scale, scale, 1);
-                stack.translate(x / scale, y / scale, 0);
-                gfx.blit(0, 0, 0, 18, 18, sprite);
-                stack.popPose();
+            Holder<MobEffect> effect = this.data.getEffect();
+            TextureAtlasSprite sprite = texMgr.get(effect);
+            float scale = 0.5F;
+            PoseStack stack = gfx.pose();
+            stack.pushPose();
+            stack.scale(scale, scale, 1);
+            stack.translate(x / scale, y / scale, 0);
+            gfx.blit(0, 0, 0, 18, 18, sprite);
+            stack.popPose();
         }
 
     }

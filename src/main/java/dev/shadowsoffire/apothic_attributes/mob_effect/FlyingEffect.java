@@ -1,5 +1,6 @@
 package dev.shadowsoffire.apothic_attributes.mob_effect;
 
+import dev.shadowsoffire.apothic_attributes.ApothicAttributes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -11,7 +12,7 @@ public class FlyingEffect extends MobEffect {
 
     public FlyingEffect() {
         super(MobEffectCategory.BENEFICIAL, ChatFormatting.RED.getColor());
-        this.addAttributeModifier(NeoForgeMod.CREATIVE_FLIGHT.value(), "ea575584-4ff4-4c96-a1a3-f2024d9fd898", 1, Operation.ADDITION);
+        this.addAttributeModifier(NeoForgeMod.CREATIVE_FLIGHT, ApothicAttributes.loc("flying"), 1, Operation.ADD_VALUE);
     }
 
     @Override

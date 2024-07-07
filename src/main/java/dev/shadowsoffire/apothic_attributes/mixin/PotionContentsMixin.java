@@ -1,6 +1,7 @@
 package dev.shadowsoffire.apothic_attributes.mixin;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,16 +12,17 @@ import com.mojang.datafixers.util.Pair;
 import dev.shadowsoffire.apothic_attributes.ApothicAttributes;
 import dev.shadowsoffire.apothic_attributes.api.IFormattableAttribute;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.PotionContents;
 
-@Mixin(value = PotionUtils.class, remap = false)
-public class PotionUtilsMixin {
+@Mixin(value = PotionContents.class, remap = false)
+public class PotionContentsMixin {
 
     /**
      * Redirects the second {@link List#isEmpty()} call that is checked before adding tooltips to potions to replace vanilla tooltip handling.<br>
@@ -34,14 +36,14 @@ public class PotionUtilsMixin {
      * @see PotionUtils#addPotionTooltip(ItemStack, List, float)
      * @see PotionUtils#addPotionTooltip(List, List, float)
      */
-    @Redirect(method = "addPotionTooltip(Ljava/util/List;Ljava/util/List;FF)V", at = @At(value = "INVOKE", target = "Ljava/util/List;isEmpty()Z", ordinal = 1), require = 1)
-    private static boolean apothic_attributes_potionTooltips(List<Pair<Attribute, AttributeModifier>> list, List<MobEffectInstance> effects, List<Component> tooltips, float durationFactor) {
+    @Redirect(method = "addPotionTooltip(Ljava/lang/Iterable;Ljava/util/function/Consumer;FF)V", at = @At(value = "INVOKE", target = "Ljava/util/List;isEmpty()Z"), require = 1)
+    private static boolean apothic_attributes_potionTooltips(List<Pair<Holder<Attribute>, AttributeModifier>> list, Iterable<MobEffectInstance> effects, Consumer<Component> tooltips, float durationFactor) {
         if (!list.isEmpty()) {
-            tooltips.add(CommonComponents.EMPTY);
-            tooltips.add(Component.translatable("potion.whenDrank").withStyle(ChatFormatting.DARK_PURPLE));
+            tooltips.accept(CommonComponents.EMPTY);
+            tooltips.accept(Component.translatable("potion.whenDrank").withStyle(ChatFormatting.DARK_PURPLE));
 
-            for (Pair<Attribute, AttributeModifier> pair : list) {
-                tooltips.add(IFormattableAttribute.toComponent(pair.getFirst(), pair.getSecond(), ApothicAttributes.getTooltipFlag()));
+            for (Pair<Holder<Attribute>, AttributeModifier> pair : list) {
+                tooltips.accept(IFormattableAttribute.toComponent(pair.getFirst(), pair.getSecond(), ApothicAttributes.getTooltipFlag()));
             }
         }
         return true;

@@ -6,11 +6,12 @@ import dev.shadowsoffire.apothic_attributes.ALConfig;
 import dev.shadowsoffire.apothic_attributes.ApothicAttributes;
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import dev.shadowsoffire.apothic_attributes.api.AttributeHelper;
-import dev.shadowsoffire.apothic_attributes.api.IFormattableAttribute;
-import dev.shadowsoffire.apothic_attributes.packet.CritParticleMessage;
+import dev.shadowsoffire.apothic_attributes.commands.BonusModifierCommand;
+import dev.shadowsoffire.apothic_attributes.event.ApotheosisCommandEvent;
+import dev.shadowsoffire.apothic_attributes.payload.CritParticlePayload;
 import dev.shadowsoffire.apothic_attributes.util.AttributesUtil;
-import dev.shadowsoffire.placebo.network.PacketDistro;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -22,13 +23,12 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeMap;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -36,31 +36,27 @@ import net.minecraft.world.item.ElytraItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.TridentItem;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
-import net.neoforged.neoforge.event.entity.living.LivingAttackEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
 import net.neoforged.neoforge.event.entity.living.LivingHealEvent;
-import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent.BreakSpeed;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent;
-import net.neoforged.neoforge.event.level.BlockEvent.BreakEvent;
+import net.neoforged.neoforge.event.level.BlockDropsEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 public class AttributeEvents {
-
-    @SubscribeEvent
-    public void fixChangedAttributes(PlayerLoggedInEvent e) {
-        AttributeMap map = e.getEntity().getAttributes();
-        map.getInstance(NeoForgeMod.STEP_HEIGHT.value()).setBaseValue(0.6);
-    }
 
     private boolean canBenefitFromDrawSpeed(ItemStack stack) {
         return stack.getItem() instanceof ProjectileWeaponItem || stack.getItem() instanceof TridentItem;
@@ -74,7 +70,7 @@ public class AttributeEvents {
     @SubscribeEvent
     public void drawSpeed(LivingEntityUseItemEvent.Tick e) {
         if (e.getEntity() instanceof Player player) {
-            double t = player.getAttribute(ALObjects.Attributes.DRAW_SPEED.get()).getValue() - 1;
+            double t = player.getAttribute(ALObjects.Attributes.DRAW_SPEED).getValue() - 1;
             if (t == 0 || !this.canBenefitFromDrawSpeed(e.getItem())) return;
 
             // Handle negative draw speed.
@@ -103,15 +99,14 @@ public class AttributeEvents {
     /**
      * This event handler manages the Life Steal and Overheal attributes.
      */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void lifeStealOverheal(LivingHurtEvent e) {
+    public void lifeStealOverheal(LivingDamageEvent.Post e) {
         if (e.getSource().getDirectEntity() instanceof LivingEntity attacker && AttributesUtil.isPhysicalDamage(e.getSource())) {
-            float lifesteal = (float) attacker.getAttributeValue(ALObjects.Attributes.LIFE_STEAL.get());
-            float dmg = Math.min(e.getAmount(), e.getEntity().getHealth());
+            float lifesteal = (float) attacker.getAttributeValue(ALObjects.Attributes.LIFE_STEAL);
+            float dmg = Math.min(e.getNewDamage(), e.getEntity().getHealth());
             if (lifesteal > 0.001) {
                 attacker.heal(dmg * lifesteal);
             }
-            float overheal = (float) attacker.getAttributeValue(ALObjects.Attributes.OVERHEAL.get());
+            float overheal = (float) attacker.getAttributeValue(ALObjects.Attributes.OVERHEAL);
             float maxOverheal = attacker.getMaxHealth() * 0.5F;
             if (overheal > 0 && attacker.getAbsorptionAmount() < maxOverheal) {
                 attacker.setAbsorptionAmount(Math.min(maxOverheal, attacker.getAbsorptionAmount() + dmg * overheal));
@@ -134,14 +129,14 @@ public class AttributeEvents {
      * </ul>
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void meleeDamageAttributes(LivingAttackEvent e) {
+    public void meleeDamageAttributes(LivingIncomingDamageEvent e) {
         if (e.getEntity().level().isClientSide || e.getEntity().isDeadOrDying()) return;
         if (noRecurse) return;
         noRecurse = true;
         if (e.getSource().getDirectEntity() instanceof LivingEntity attacker && AttributesUtil.isPhysicalDamage(e.getSource())) {
-            float hpDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.CURRENT_HP_DAMAGE.get());
-            float fireDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.FIRE_DAMAGE.get());
-            float coldDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.COLD_DAMAGE.get());
+            float hpDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.CURRENT_HP_DAMAGE);
+            float fireDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.FIRE_DAMAGE);
+            float coldDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.COLD_DAMAGE);
             LivingEntity target = e.getEntity();
             int time = target.invulnerableTime;
             float atkStrength = ApothicAttributes.getLocalAtkStrength(attacker);
@@ -179,12 +174,12 @@ public class AttributeEvents {
      * Handles {@link ALObjects#CRIT_CHANCE} and {@link ALObjects#CRIT_DAMAGE}
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
-    public void apothCriticalStrike(LivingHurtEvent e) {
+    public void apothCriticalStrike(LivingIncomingDamageEvent e) {
         LivingEntity attacker = e.getSource().getEntity() instanceof LivingEntity le ? le : null;
         if (attacker == null) return;
 
-        double critChance = attacker.getAttributeValue(ALObjects.Attributes.CRIT_CHANCE.get());
-        float critDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.CRIT_DAMAGE.get());
+        double critChance = attacker.getAttributeValue(ALObjects.Attributes.CRIT_CHANCE);
+        float critDmg = (float) attacker.getAttributeValue(ALObjects.Attributes.CRIT_DAMAGE);
 
         RandomSource rand = e.getEntity().getRandom();
 
@@ -201,7 +196,7 @@ public class AttributeEvents {
         e.setAmount(e.getAmount() * critMult);
 
         if (critMult > 1 && !attacker.level().isClientSide) {
-            PacketDistro.sendToTracking(new CritParticleMessage(e.getEntity().getId()), (ServerLevel) attacker.level(), e.getEntity().blockPosition());
+            PacketDistributor.sendToPlayersTrackingChunk((ServerLevel) attacker.level(), e.getEntity().chunkPosition(), new CritParticlePayload(e.getEntity().getId()));
         }
     }
 
@@ -210,9 +205,9 @@ public class AttributeEvents {
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void vanillaCritDmg(CriticalHitEvent e) {
-        float critDmg = (float) e.getEntity().getAttributeValue(ALObjects.Attributes.CRIT_DAMAGE.get());
+        float critDmg = (float) e.getEntity().getAttributeValue(ALObjects.Attributes.CRIT_DAMAGE);
         if (e.isVanillaCritical()) {
-            e.setDamageModifier(Math.max(e.getDamageModifier(), critDmg));
+            e.setDamageMultiplier(Math.max(e.getDamageMultiplier(), critDmg));
         }
     }
 
@@ -221,23 +216,25 @@ public class AttributeEvents {
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void breakSpd(BreakSpeed e) {
-        e.setNewSpeed(e.getNewSpeed() * (float) e.getEntity().getAttributeValue(ALObjects.Attributes.MINING_SPEED.get()));
+        e.setNewSpeed(e.getNewSpeed() * (float) e.getEntity().getAttributeValue(ALObjects.Attributes.MINING_SPEED));
     }
 
     /**
      * This event, and {@linkplain #mobXp(LivingExperienceDropEvent) the event below} handle {@link ALObjects#EXPERIENCE_GAINED}
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
-    public void blockBreak(BreakEvent e) {
-        double xpMult = e.getPlayer().getAttributeValue(ALObjects.Attributes.EXPERIENCE_GAINED.get());
-        e.setExpToDrop((int) (e.getExpToDrop() * xpMult));
+    public void blockBreak(BlockDropsEvent e) {
+        if (e.getBreaker() instanceof LivingEntity living) {
+            double xpMult = living.getAttributeValue(ALObjects.Attributes.EXPERIENCE_GAINED);
+            e.setDroppedExperience((int) (e.getDroppedExperience() * xpMult));
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void mobXp(LivingExperienceDropEvent e) {
         Player player = e.getAttackingPlayer();
         if (player == null) return;
-        double xpMult = e.getAttackingPlayer().getAttributeValue(ALObjects.Attributes.EXPERIENCE_GAINED.get());
+        double xpMult = e.getAttackingPlayer().getAttributeValue(ALObjects.Attributes.EXPERIENCE_GAINED);
         e.setDroppedExperience((int) (e.getDroppedExperience() * xpMult));
     }
 
@@ -246,7 +243,7 @@ public class AttributeEvents {
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void heal(LivingHealEvent e) {
-        float factor = (float) e.getEntity().getAttributeValue(ALObjects.Attributes.HEALING_RECEIVED.get());
+        float factor = (float) e.getEntity().getAttributeValue(ALObjects.Attributes.HEALING_RECEIVED);
         e.setAmount(e.getAmount() * factor);
         if (e.getAmount() <= 0) e.setCanceled(true);
     }
@@ -259,18 +256,11 @@ public class AttributeEvents {
         if (e.getEntity() instanceof AbstractArrow arrow) {
             if (arrow.level().isClientSide || arrow.getPersistentData().getBoolean("apothic_attributes.arrow.done")) return;
             if (arrow.getOwner() instanceof LivingEntity le) {
-                arrow.setBaseDamage(arrow.getBaseDamage() * le.getAttributeValue(ALObjects.Attributes.ARROW_DAMAGE.get()));
-                arrow.setDeltaMovement(arrow.getDeltaMovement().scale(le.getAttributeValue(ALObjects.Attributes.ARROW_VELOCITY.get())));
+                arrow.setBaseDamage(arrow.getBaseDamage() * le.getAttributeValue(ALObjects.Attributes.ARROW_DAMAGE));
+                arrow.setDeltaMovement(arrow.getDeltaMovement().scale(le.getAttributeValue(ALObjects.Attributes.ARROW_VELOCITY)));
             }
             arrow.getPersistentData().putBoolean("apothic_attributes.arrow.done", true);
         }
-    }
-
-    /**
-     * Copied from {@link MeleeAttackGoal#getAttackReachSqr}
-     */
-    private static double getAttackReachSqr(Entity attacker, LivingEntity pAttackTarget) {
-        return attacker.getBbWidth() * 2.0F * attacker.getBbWidth() * 2.0F + pAttackTarget.getBbWidth();
     }
 
     /**
@@ -283,15 +273,23 @@ public class AttributeEvents {
      * Handles {@link ALObjects#DODGE_CHANCE} for melee attacks.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
-    public void dodge(LivingAttackEvent e) {
+    public void dodge(LivingIncomingDamageEvent e) {
         LivingEntity target = e.getEntity();
         if (target.level().isClientSide) return;
         Entity attacker = e.getSource().getDirectEntity();
-        if (attacker instanceof LivingEntity) {
-            double dodgeChance = target.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE.get());
-            double atkRangeSqr = attacker instanceof Player p ? p.getEntityReach() * p.getEntityReach() : getAttackReachSqr(attacker, target);
+        double dodgeChance = target.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE);
+        if (attacker instanceof Player player) {
+            double atkRange = player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
+            double atkRangeSqr = atkRange * atkRange;
             dodgeRand.setSeed(target.tickCount);
             if (attacker.distanceToSqr(target) <= atkRangeSqr && dodgeRand.nextFloat() <= dodgeChance) {
+                this.onDodge(target);
+                e.setCanceled(true);
+            }
+        }
+        else if (attacker instanceof Mob mob) {
+            dodgeRand.setSeed(target.tickCount);
+            if (mob.isWithinMeleeAttackRange(target) && dodgeRand.nextFloat() <= dodgeChance) {
                 this.onDodge(target);
                 e.setCanceled(true);
             }
@@ -305,7 +303,7 @@ public class AttributeEvents {
     public void dodge(ProjectileImpactEvent e) {
         Entity target = e.getRayTraceResult() instanceof EntityHitResult entRes ? entRes.getEntity() : null;
         if (target instanceof LivingEntity lvTarget) {
-            double dodgeChance = lvTarget.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE.get());
+            double dodgeChance = lvTarget.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE);
             // We can skip the distance check for projectiles, as "Projectile Impact" means the projectile is on the target.
             dodgeRand.setSeed(target.tickCount);
             if (dodgeRand.nextFloat() <= dodgeChance) {
@@ -341,25 +339,49 @@ public class AttributeEvents {
         }
     }
 
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public void bonusModifiers(ItemAttributeModifierEvent e) {
+        ItemStack stack = e.getItemStack();
+        ItemAttributeModifiers bonus = stack.get(ALObjects.Components.BONUS_ATTRIBUTE_MODIFIERS);
+        if (bonus != null) {
+            bonus.modifiers().forEach(entry -> {
+                e.addModifier(entry.attribute(), entry.modifier(), entry.slot());
+            });
+        }
+    }
+
     /**
      * Adds a fake modifier to show Attack Range to weapons with Attack Damage.
      */
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOW)
     public void affixModifiers(ItemAttributeModifierEvent e) {
-        boolean hasBaseAD = e.getModifiers().get(Attributes.ATTACK_DAMAGE).stream().filter(m -> ((IFormattableAttribute) Attributes.ATTACK_DAMAGE).getBaseUUID().equals(m.getId())).findAny().isPresent();
+        boolean hasBaseAD = AttributeHelper.getModifiers(e.getModifiers(), Attributes.ATTACK_DAMAGE).filter(entry -> entry.modifier().id().equals(AttributeHelper.BASE_ATTACK_DAMAGE)).findAny().isPresent();
         if (hasBaseAD) {
-            boolean hasBaseAR = e.getModifiers().get(NeoForgeMod.ENTITY_REACH.value()).stream().filter(m -> ((IFormattableAttribute) NeoForgeMod.ENTITY_REACH.value()).getBaseUUID().equals(m.getId())).findAny().isPresent();
+            boolean hasBaseAR = AttributeHelper.getModifiers(e.getModifiers(), Attributes.ENTITY_INTERACTION_RANGE).filter(entry -> entry.modifier().id().equals(AttributeHelper.BASE_ENTITY_REACH)).findAny().isPresent();
             if (!hasBaseAR) {
-                e.addModifier(NeoForgeMod.ENTITY_REACH.value(), new AttributeModifier(AttributeHelper.BASE_ENTITY_REACH, "apothic_attributes:fake_base_range", 0, Operation.ADDITION));
+                e.addModifier(Attributes.ENTITY_INTERACTION_RANGE, new AttributeModifier(AttributeHelper.BASE_ENTITY_REACH, 0, Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND);
             }
         }
-        if (e.getSlotType() == EquipmentSlot.CHEST && e.getItemStack().getItem() instanceof ElytraItem && !e.getModifiers().containsKey(ALObjects.Attributes.ELYTRA_FLIGHT.get())) {
-            e.addModifier(ALObjects.Attributes.ELYTRA_FLIGHT.get(), new AttributeModifier(AttributeHelper.ELYTRA_FLIGHT_UUID, "apothic_attributes:elytra_item_flight", 1, Operation.ADDITION));
+
+        if (e.getItemStack().getItem() instanceof ElytraItem && e.getModifiers().stream().noneMatch(entry -> entry.attribute().equals(ALObjects.Attributes.ELYTRA_FLIGHT))) {
+            e.addModifier(ALObjects.Attributes.ELYTRA_FLIGHT, new AttributeModifier(ApothicAttributes.loc("elytra_item_flight"), 1, Operation.ADD_VALUE), EquipmentSlotGroup.CHEST);
         }
     }
 
     @SubscribeEvent
     public void reloads(AddReloadListenerEvent e) {
         e.addListener(ALConfig.makeReloader());
+    }
+
+    @SubscribeEvent
+    public void cmds(RegisterCommandsEvent e) {
+        var builder = Commands.literal("apoth");
+        NeoForge.EVENT_BUS.post(new ApotheosisCommandEvent(builder));
+        e.getDispatcher().register(builder);
+    }
+
+    @SubscribeEvent
+    public void cmds(ApotheosisCommandEvent e) {
+        BonusModifierCommand.register(e.getRoot());
     }
 }

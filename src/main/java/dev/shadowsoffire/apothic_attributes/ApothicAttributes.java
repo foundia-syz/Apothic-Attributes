@@ -2,20 +2,19 @@ package dev.shadowsoffire.apothic_attributes;
 
 import java.io.File;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import dev.shadowsoffire.apothic_attributes.client.AttributesLibClient;
-import dev.shadowsoffire.apothic_attributes.compat.CuriosCompat;
 import dev.shadowsoffire.apothic_attributes.impl.AttributeEvents;
-import dev.shadowsoffire.apothic_attributes.packet.CritParticleMessage;
+import dev.shadowsoffire.apothic_attributes.payload.CritParticlePayload;
 import dev.shadowsoffire.apothic_attributes.util.MiscDatagen;
 import dev.shadowsoffire.placebo.network.PayloadHelper;
 import dev.shadowsoffire.placebo.registry.DeferredHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput.Target;
 import net.minecraft.resources.ResourceLocation;
@@ -32,13 +31,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.TooltipFlag;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
@@ -66,7 +63,7 @@ public class ApothicAttributes {
             bus.register(AttributesLibClient.ModBusSub.class);
         }
 
-        PayloadHelper.registerPayload(new CritParticleMessage.Provider());
+        PayloadHelper.registerPayload(new CritParticlePayload.Provider());
         ALObjects.bootstrap(bus);
         ALConfig.load();
     }
@@ -74,12 +71,11 @@ public class ApothicAttributes {
     @SubscribeEvent
     public void init(FMLCommonSetupEvent e) {
         e.enqueueWork(() -> {
-            MobEffects.BLINDNESS.addAttributeModifier(Attributes.FOLLOW_RANGE, "f8c3de3d-1fea-4d7c-a8b0-22f63c4c3454", -0.75, Operation.MULTIPLY_TOTAL);
+            MobEffects.BLINDNESS.value().addAttributeModifier(Attributes.FOLLOW_RANGE, loc("blindness"), -0.75, Operation.ADD_MULTIPLIED_TOTAL);
             // TODO: Update to show in GUI without applying attribute to entity
             // if (MobEffects.SLOW_FALLING.getAttributeModifiers().isEmpty()) {
             // MobEffects.SLOW_FALLING.addAttributeModifier(ForgeMod.ENTITY_GRAVITY.get(), "A5B6CF2A-2F7C-31EF-9022-7C3E7D5E6ABA", -0.07, Operation.ADDITION);
             // }
-            BuiltInRegistries.ATTRIBUTE.addAlias(loc("creative_flight"), new ResourceLocation("neoforge", "creative_flight"));
         });
     }
 
@@ -109,32 +105,30 @@ public class ApothicAttributes {
                 ALObjects.Attributes.DODGE_CHANCE,
                 ALObjects.Attributes.ELYTRA_FLIGHT);
         });
-        // Change the base value of Step Height to reflect the real base value of a Player.
-        // The alternative is a bunch of special casing in the display.
-        // This is course-corrected in IForgeEntityMixin.
-        e.add(EntityType.PLAYER, NeoForgeMod.STEP_HEIGHT.value(), 0.6);
     }
 
     @SafeVarargs
-    private static void addAll(EntityType<? extends LivingEntity> type, BiConsumer<EntityType<? extends LivingEntity>, Attribute> add, Supplier<? extends Attribute>... attribs) {
-        for (Supplier<? extends Attribute> a : attribs)
-            add.accept(type, a.get());
+    private static void addAll(EntityType<? extends LivingEntity> type, BiConsumer<EntityType<? extends LivingEntity>, Holder<Attribute>> add, Holder<Attribute>... attribs) {
+        for (Holder<Attribute> a : attribs)
+            add.accept(type, a);
     }
 
     @SubscribeEvent
     public void setup(FMLCommonSetupEvent e) {
         AttributeSupplier playerAttribs = DefaultAttributes.getSupplier(EntityType.PLAYER);
-        for (Attribute attr : BuiltInRegistries.ATTRIBUTE) {
-            if (playerAttribs.hasAttribute(attr)) attr.setSyncable(true);
-        }
-        if (ModList.get().isLoaded("curios")) {
-            e.enqueueWork(CuriosCompat::init);
-        }
+        BuiltInRegistries.ATTRIBUTE.holders().forEach(attr -> {
+            if (playerAttribs.hasAttribute(attr)) {
+                attr.value().setSyncable(true);
+            }
+        });
+        // if (ModList.get().isLoaded("curios")) {
+        // e.enqueueWork(CuriosCompat::init);
+        // }
     }
 
     @SubscribeEvent
     public void data(GatherDataEvent e) {
-        MiscDatagen gen = new MiscDatagen(e.getGenerator().getPackOutput().getOutputFolder(Target.DATA_PACK).resolve(MODID));
+        MiscDatagen gen = new MiscDatagen(e.getGenerator().getPackOutput().getOutputFolder(Target.DATA_PACK).resolve(MODID), e.getLookupProvider());
         e.getGenerator().addProvider(true, gen);
     }
 
@@ -150,7 +144,9 @@ public class ApothicAttributes {
      * For non-players, this value is always 1.
      */
     public static float getLocalAtkStrength(Entity entity) {
-        if (entity instanceof Player) return localAtkStrength;
+        if (entity instanceof Player) {
+            return localAtkStrength;
+        }
         return 1;
     }
 
@@ -160,12 +156,14 @@ public class ApothicAttributes {
      * @return If called on the client, the current tooltip flag, otherwise {@link TooltipFlag#NORMAL}
      */
     public static TooltipFlag getTooltipFlag() {
-        if (FMLEnvironment.dist.isClient()) return ClientAccess.getTooltipFlag();
+        if (FMLEnvironment.dist.isClient()) {
+            return ClientAccess.getTooltipFlag();
+        }
         return TooltipFlag.NORMAL;
     }
 
     public static ResourceLocation loc(String path) {
-        return new ResourceLocation(MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(MODID, path);
     }
 
     private static class ClientAccess {

@@ -22,7 +22,6 @@ public class NeoForgeModMixin {
         if ("creative_flight".equals(name)) {
             return original.call(defReg, name, (Supplier<Attribute>) () -> new BooleanAttribute("neoforge.creative_flight", false));
         }
-        System.out.println(name);
         return original.call(defReg, name, supplier);
     }
 }

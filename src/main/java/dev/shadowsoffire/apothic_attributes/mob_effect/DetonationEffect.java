@@ -17,9 +17,8 @@ public class DetonationEffect extends MobEffect {
     }
 
     // TODO: Figure out how to trigger this on removal instead of on last tick, since it should always go off.
-    
     @Override
-    public void applyEffectTick(LivingEntity entity, int amp) {
+    public boolean applyEffectTick(LivingEntity entity, int amp) {
         int ticks = entity.getRemainingFireTicks();
         if (ticks > 0) {
             entity.setRemainingFireTicks(0);
@@ -29,6 +28,7 @@ public class DetonationEffect extends MobEffect {
             level.sendParticles(ParticleTypes.FLAME, entity.getX(), entity.getY(), entity.getZ(), 100, bb.getXsize(), bb.getYsize(), bb.getZsize(), 0.25);
             level.playSound(null, entity, SoundEvents.DRAGON_FIREBALL_EXPLODE, SoundSource.HOSTILE, 1, 1.2F);
         }
+        return true;
     }
 
     @Override

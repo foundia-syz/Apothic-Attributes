@@ -5,7 +5,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 /**
@@ -20,7 +19,7 @@ public class PercentBasedAttribute extends RangedAttribute implements IFormattab
 
     @Override
     public MutableComponent toValueComponent(Operation op, double value, TooltipFlag flag) {
-        return Component.translatable("apothic_attributes.value.percent", ItemStack.ATTRIBUTE_MODIFIER_FORMAT.format(value * 100));
+        return Component.translatable("apothic_attributes.value.percent", FORMAT.format(value * 100));
     }
 
 }

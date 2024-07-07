@@ -9,7 +9,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
-import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.world.item.TooltipFlag;
 
 /**
@@ -24,10 +23,10 @@ import net.minecraft.world.item.TooltipFlag;
  * <p>
  * Modifiers not using one of the specified modifiers noted above will display as an error condition.
  */
-public class BooleanAttribute extends RangedAttribute implements IFormattableAttribute {
+public class BooleanAttribute extends Attribute implements IFormattableAttribute {
 
     public BooleanAttribute(String pDescriptionId, boolean defaultValue) {
-        super(pDescriptionId, defaultValue ? 1 : 0, 0, Double.MAX_VALUE);
+        super(pDescriptionId, defaultValue ? 1 : 0);
     }
 
     @Override
@@ -35,10 +34,10 @@ public class BooleanAttribute extends RangedAttribute implements IFormattableAtt
         if (op == null) {
             return Component.translatable("apothic_attributes.value.boolean." + (value > 0 ? "enabled" : "disabled"));
         }
-        else if (op == Operation.ADDITION && (int) value == 1) {
+        else if (op == Operation.ADD_VALUE && (int) value == 1) {
             return Component.translatable("apothic_attributes.value.boolean.enable");
         }
-        else if (op == Operation.MULTIPLY_TOTAL && (int) value == -1) {
+        else if (op == Operation.ADD_MULTIPLIED_TOTAL && (int) value == -1) {
             return Component.translatable("apothic_attributes.value.boolean.force_disable");
         }
         else return Component.translatable("apothic_attributes.value.boolean.invalid");
@@ -47,16 +46,16 @@ public class BooleanAttribute extends RangedAttribute implements IFormattableAtt
     @Override
     public MutableComponent toComponent(AttributeModifier modif, TooltipFlag flag) {
         Attribute attr = this.ths();
-        double value = modif.getAmount();
+        double value = modif.amount();
 
         MutableComponent comp;
 
         if (value > 0.0D) {
-            comp = Component.translatable("apothic_attributes.modifier.bool", this.toValueComponent(modif.getOperation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(ChatFormatting.BLUE);
+            comp = Component.translatable("apothic_attributes.modifier.bool", this.toValueComponent(modif.operation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(ChatFormatting.BLUE);
         }
         else {
             value *= -1.0D;
-            comp = Component.translatable("apothic_attributes.modifier.bool", this.toValueComponent(modif.getOperation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(ChatFormatting.RED);
+            comp = Component.translatable("apothic_attributes.modifier.bool", this.toValueComponent(modif.operation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(ChatFormatting.RED);
         }
 
         return comp.append(this.getDebugInfo(modif, flag));
@@ -64,7 +63,10 @@ public class BooleanAttribute extends RangedAttribute implements IFormattableAtt
 
     @Override
     public double sanitizeValue(double value) {
-        return Math.max(value, 0);
+        if (Double.isNaN(value)) {
+            return 0;
+        }
+        return value > 0 ? 1 : 0;
     }
 
 }

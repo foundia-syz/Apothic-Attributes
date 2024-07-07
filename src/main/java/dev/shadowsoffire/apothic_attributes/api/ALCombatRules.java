@@ -26,11 +26,11 @@ public class ALCombatRules {
      */
     public static float getDamageAfterProtection(LivingEntity target, DamageSource src, float amount, float protPoints) {
         if (src.getEntity() instanceof LivingEntity attacker) {
-            float shred = (float) attacker.getAttributeValue(Attributes.PROT_SHRED.get());
+            float shred = (float) attacker.getAttributeValue(Attributes.PROT_SHRED);
             if (shred > 0.001F) {
                 protPoints *= 1 - shred;
             }
-            float pierce = (float) attacker.getAttributeValue(Attributes.PROT_PIERCE.get());
+            float pierce = (float) attacker.getAttributeValue(Attributes.PROT_PIERCE);
             if (pierce > 0.001F) {
                 protPoints -= pierce;
             }
@@ -78,13 +78,13 @@ public class ALCombatRules {
      */
     public static float getDamageAfterArmor(LivingEntity target, DamageSource src, float amount, float armor, float toughness) {
         if (src.getEntity() instanceof LivingEntity attacker) {
-            float shred = (float) attacker.getAttributeValue(Attributes.ARMOR_SHRED.get());
+            float shred = (float) attacker.getAttributeValue(Attributes.ARMOR_SHRED);
             float bypassResist = Math.min(toughness * 0.02F, 0.6F);
             if (shred > 0.001F) {
                 shred *= 1 - bypassResist;
                 armor *= 1 - shred;
             }
-            float pierce = (float) attacker.getAttributeValue(Attributes.ARMOR_PIERCE.get());
+            float pierce = (float) attacker.getAttributeValue(Attributes.ARMOR_PIERCE);
             if (pierce > 0.001F) {
                 pierce *= 1 - bypassResist;
                 armor -= pierce;

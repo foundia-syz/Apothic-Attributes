@@ -6,13 +6,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import dev.shadowsoffire.apothic_attributes.api.AttributeHelper;
 import dev.shadowsoffire.apothic_attributes.client.ModifierSource.EffectModifierSource;
 import dev.shadowsoffire.apothic_attributes.client.ModifierSource.ItemModifierSource;
 import dev.shadowsoffire.apothic_attributes.util.Comparators;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,7 +34,7 @@ public abstract class ModifierSourceType<T> {
         public void extract(LivingEntity entity, BiConsumer<AttributeModifier, ModifierSource<?>> map) {
             for (EquipmentSlot slot : EquipmentSlot.values()) {
                 ItemStack item = entity.getItemBySlot(slot);
-                item.getAttributeModifiers(slot).values().forEach(modif -> {
+                item.forEachModifier(slot, (attr, modif) -> {
                     map.accept(modif, new ItemModifierSource(item));
                 });
             }
@@ -52,8 +52,8 @@ public abstract class ModifierSourceType<T> {
         @Override
         public void extract(LivingEntity entity, BiConsumer<AttributeModifier, ModifierSource<?>> map) {
             for (MobEffectInstance effectInst : entity.getActiveEffects()) {
-                effectInst.getEffect().getAttributeModifiers().values().forEach(modif -> {
-                    map.accept(modif.create(effectInst.getAmplifier()), new EffectModifierSource(effectInst));
+                effectInst.getEffect().value().attributeModifiers.values().forEach(template -> {
+                    map.accept(template.create(effectInst.getAmplifier()), new EffectModifierSource(effectInst));
                 });
             }
         }
@@ -74,16 +74,16 @@ public abstract class ModifierSourceType<T> {
         return type;
     }
 
-    public static Comparator<AttributeModifier> compareBySource(Map<UUID, ModifierSource<?>> sources) {
+    public static Comparator<AttributeModifier> compareBySource(Map<ResourceLocation, ModifierSource<?>> sources) {
 
         Comparator<AttributeModifier> comp = Comparators.chained(
-            Comparator.comparingInt(a -> sources.get(a.getId()).getType().getPriority()),
-            Comparator.comparing(a -> sources.get(a.getId())),
+            Comparator.comparingInt(a -> sources.get(a.id()).getType().getPriority()),
+            Comparator.comparing(a -> sources.get(a.id())),
             AttributeHelper.modifierComparator());
 
         return (a1, a2) -> {
-            var src1 = sources.get(a1.getId());
-            var src2 = sources.get(a2.getId());
+            var src1 = sources.get(a1.id());
+            var src2 = sources.get(a2.id());
 
             if (src1 != null && src2 != null) return comp.compare(a1, a2);
 

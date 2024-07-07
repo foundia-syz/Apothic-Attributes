@@ -1,46 +1,43 @@
 package dev.shadowsoffire.apothic_attributes.api;
 
 import java.util.Comparator;
-import java.util.UUID;
+import java.util.List;
+import java.util.stream.Stream;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
-import dev.shadowsoffire.apothic_attributes.ApothicAttributes;
 import dev.shadowsoffire.apothic_attributes.util.Comparators;
-import dev.shadowsoffire.apothic_attributes.util.ItemAccess;
-import dev.shadowsoffire.placebo.Placebo;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 
 public class AttributeHelper {
 
     /**
      * UUID of the base modifier for Attack Damage
      */
-    public static final UUID BASE_ATTACK_DAMAGE = ItemAccess.getBaseAD();
+    public static final ResourceLocation BASE_ATTACK_DAMAGE = Item.BASE_ATTACK_DAMAGE_ID;
 
     /**
      * UUID of the base modifier for Attack Speed
      */
-    public static final UUID BASE_ATTACK_SPEED = ItemAccess.getBaseAS();
+    public static final ResourceLocation BASE_ATTACK_SPEED = Item.BASE_ATTACK_SPEED_ID;
 
     /**
      * UUID of the base modifier for Attack Range
      */
-    public static final UUID BASE_ENTITY_REACH = UUID.fromString("89689aa7-c577-4d97-a03e-791fde1798d4");
-
-    /**
-     * UUID of the modifier Elytras use for {@link ALObjects.Attributes#ELYTRA_FLIGHT}.
-     */
-    public static final UUID ELYTRA_FLIGHT_UUID = UUID.fromString("72aae561-99a9-4a48-9b14-589a255cb077");
+    public static final ResourceLocation BASE_ENTITY_REACH = ResourceLocation.withDefaultNamespace("base_entity_reach");
 
     /**
      * A brief explanation of {@link Operation} and Attribute calculations:
@@ -50,9 +47,9 @@ public class AttributeHelper {
      * <p>
      * There are three valid operations: Addition, Multiply Base, and Multiply Total. They are executed in order.<br>
      * <ol>
-     * <li>{@link Operation#ADDITION Addition} adds the given modifier to the base value of the attribute.</li>
-     * <li>{@link Operation#MULTIPLY_BASE Multiply Base} adds (modifier * new base value) to the final value.</li>
-     * <li>{@link Operation#MULTIPLY_TOTAL Multiply Total} multiplies the final value by (1.0 + modifier).</li>
+     * <li>{@link Operation#ADD_VALUE Addition} adds the given modifier to the base value of the attribute.</li>
+     * <li>{@link Operation#ADD_MULTIPLIED_BASE Multiply Base} adds (modifier * new base value) to the final value.</li>
+     * <li>{@link Operation#ADD_MULTIPLIED_TOTAL Multiply Total} multiplies the final value by (1.0 + modifier).</li>
      * </ol>
      * The Attribute has the ability to clamp the final modified value, so the result of some modifiers may be ignored.
      * <p>
@@ -64,48 +61,50 @@ public class AttributeHelper {
      *
      * @param entity    The entity the modifier will be applied to.
      * @param attribute The attribute being modified.
-     * @param name      The name of the attribute modifier. This will be prefixed with {@link Placebo#MODID}.
+     * @param id        A unique resource location identifying the modifier. Two modifiers with the same id cannot exist for the same attribute.
      * @param value     The value of the attribute modifier. See above.
      * @param operation The operation of the attribute modifier. See above.
      * @see AttributeInstance#calculateValue()
      */
-    public static void modify(LivingEntity entity, Attribute attribute, String name, double value, Operation operation) {
+    public static void modify(LivingEntity entity, Holder<Attribute> attribute, ResourceLocation id, double value, Operation operation) {
         AttributeInstance inst = entity.getAttribute(attribute);
-        if (inst != null) inst.addPermanentModifier(new AttributeModifier(ApothicAttributes.MODID + ":" + name, value, operation));
+        if (inst != null) {
+            inst.addPermanentModifier(new AttributeModifier(id, value, operation));
+        }
     }
 
     /**
      * Adds the given modifier to the base value of the attribute.
      */
-    public static void addToBase(LivingEntity entity, Attribute attribute, String name, double modifier) {
-        modify(entity, attribute, name, modifier, Operation.ADDITION);
+    public static void addToBase(LivingEntity entity, Holder<Attribute> attribute, ResourceLocation id, double modifier) {
+        modify(entity, attribute, id, modifier, Operation.ADD_VALUE);
     }
 
     /**
      * Adds (modifier * new base value) to the final value of the attribute.
      * New base value is the base value plus all additions (operation 0 AttributeModifiers).
      */
-    public static void addXTimesNewBase(LivingEntity entity, Attribute attribute, String name, double modifier) {
-        modify(entity, attribute, name, modifier, Operation.MULTIPLY_BASE);
+    public static void addXTimesNewBase(LivingEntity entity, Holder<Attribute> attribute, ResourceLocation id, double modifier) {
+        modify(entity, attribute, id, modifier, Operation.ADD_MULTIPLIED_BASE);
     }
 
     /**
      * Multiplies the final value of this attribute by 1.0 + modifier.
      * Final value is the value after computing all operation 0 and 1 AttributeModifiers.
      */
-    public static void multiplyFinal(LivingEntity entity, Attribute attribute, String name, double modifier) {
-        modify(entity, attribute, name, modifier, Operation.MULTIPLY_TOTAL);
+    public static void multiplyFinal(LivingEntity entity, Holder<Attribute> attribute, ResourceLocation id, double modifier) {
+        modify(entity, attribute, id, modifier, Operation.ADD_MULTIPLIED_TOTAL);
     }
 
-    public static Multimap<Attribute, AttributeModifier> sortedMap() {
-        return TreeMultimap.create(Comparators.idComparator(BuiltInRegistries.ATTRIBUTE), modifierComparator());
+    public static Multimap<Holder<Attribute>, AttributeModifier> sortedMap() {
+        return TreeMultimap.create(Comparator.comparing(Holder::value, Comparators.idComparator(BuiltInRegistries.ATTRIBUTE)), modifierComparator());
     }
 
     public static Comparator<AttributeModifier> modifierComparator() {
         return Comparators.chained(
-            Comparator.comparing(AttributeModifier::getOperation),
-            Comparator.comparing(AttributeModifier::getAmount),
-            Comparator.comparing(AttributeModifier::getId));
+            Comparator.comparing(AttributeModifier::operation),
+            Comparator.comparing(AttributeModifier::amount),
+            Comparator.comparing(AttributeModifier::id));
     }
 
     /**
@@ -113,5 +112,13 @@ public class AttributeHelper {
      */
     public static MutableComponent list() {
         return Component.literal(" \u2507 ").withStyle(ChatFormatting.GRAY);
+    }
+
+    public static Stream<ItemAttributeModifiers.Entry> getModifiers(ItemAttributeModifiers modifs, Holder<Attribute> attr) {
+        return getModifiers(modifs.modifiers(), attr);
+    }
+
+    public static Stream<ItemAttributeModifiers.Entry> getModifiers(List<ItemAttributeModifiers.Entry> modifs, Holder<Attribute> attr) {
+        return modifs.stream().filter(e -> e.attribute().equals(attr));
     }
 }

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 
 import javax.annotation.Nullable;
 
@@ -50,7 +49,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 public class AttributesGui implements Renderable, GuiEventListener {
@@ -109,10 +107,10 @@ public class AttributesGui implements Renderable, GuiEventListener {
     @SuppressWarnings("deprecation")
     public void refreshData() {
         this.data.clear();
-        BuiltInRegistries.ATTRIBUTE.stream()
+        BuiltInRegistries.ATTRIBUTE.holders()
             .map(this.player::getAttribute)
             .filter(Objects::nonNull)
-            .filter(ai -> !ALConfig.hiddenAttributes.contains(BuiltInRegistries.ATTRIBUTE.getKey(ai.getAttribute())))
+            .filter(ai -> !ALConfig.hiddenAttributes.contains(ai.getAttribute().unwrapKey().get().location()))
             .filter(ai -> !hideUnchanged || (ai.getBaseValue() != ai.getValue()))
             .forEach(this.data::add);
         this.data.sort(this::compareAttrs);
@@ -143,8 +141,8 @@ public class AttributesGui implements Renderable, GuiEventListener {
     }
 
     protected int compareAttrs(AttributeInstance a1, AttributeInstance a2) {
-        String name = I18n.get(a1.getAttribute().getDescriptionId());
-        String name2 = I18n.get(a2.getAttribute().getDescriptionId());
+        String name = I18n.get(a1.getAttribute().value().getDescriptionId());
+        String name2 = I18n.get(a2.getAttribute().value().getDescriptionId());
         return name.compareTo(name2);
     }
 
@@ -189,7 +187,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
     protected void renderTooltip(GuiGraphics gfx, int mouseX, int mouseY) {
         AttributeInstance inst = this.getHoveredSlot(mouseX, mouseY);
         if (inst != null) {
-            Attribute attr = inst.getAttribute();
+            Attribute attr = inst.getAttribute().value();
             IFormattableAttribute fAttr = (IFormattableAttribute) attr;
             List<Component> list = new ArrayList<>();
             MutableComponent name = Component.translatable(attr.getDescriptionId()).withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).withUnderlined(true));
@@ -214,7 +212,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
             list.add(CommonComponents.EMPTY);
 
             ChatFormatting color = ChatFormatting.GRAY;
-            if (attr instanceof RangedAttribute ra) {
+            if (attr instanceof RangedAttribute) {
                 if (inst.getValue() > inst.getBaseValue()) {
                     color = ChatFormatting.YELLOW;
                 }
@@ -244,32 +242,32 @@ public class AttributesGui implements Renderable, GuiEventListener {
                 this.addComp(txt, finalTooltip);
             }
 
-            if (inst.getModifiers().stream().anyMatch(modif -> modif.getAmount() != 0)) {
+            if (inst.getModifiers().stream().anyMatch(modif -> modif.amount() != 0)) {
                 this.addComp(CommonComponents.EMPTY, finalTooltip);
                 this.addComp(Component.translatable("apothic_attributes.gui.modifiers").withStyle(ChatFormatting.GOLD), finalTooltip);
 
-                Map<UUID, ModifierSource<?>> modifiersToSources = new HashMap<>();
+                Map<ResourceLocation, ModifierSource<?>> modifiersToSources = new HashMap<>();
 
                 for (ModifierSourceType<?> type : ModifierSourceType.getTypes()) {
-                    type.extract(this.player, (modif, source) -> modifiersToSources.put(modif.getId(), source));
+                    type.extract(this.player, (modif, source) -> modifiersToSources.put(modif.id(), source));
                 }
 
                 Component[] opValues = new Component[3];
 
                 for (Operation op : Operation.values()) {
-                    List<AttributeModifier> modifiers = new ArrayList<>(inst.getModifiers(op));
-                    double opValue = modifiers.stream().mapToDouble(AttributeModifier::getAmount).reduce(op == Operation.MULTIPLY_TOTAL ? 1 : 0, (res, elem) -> op == Operation.MULTIPLY_TOTAL ? res * (1 + elem) : res + elem);
+                    List<AttributeModifier> modifiers = new ArrayList<>(inst.getModifiers(op).values());
+                    double opValue = modifiers.stream().mapToDouble(AttributeModifier::amount).reduce(op == Operation.ADD_MULTIPLIED_TOTAL ? 1 : 0, (res, elem) -> op == Operation.ADD_MULTIPLIED_TOTAL ? res * (1 + elem) : res + elem);
 
                     modifiers.sort(ModifierSourceType.compareBySource(modifiersToSources));
                     for (AttributeModifier modif : modifiers) {
-                        if (modif.getAmount() != 0) {
+                        if (modif.amount() != 0) {
                             Component comp = fAttr.toComponent(modif, ApothicAttributes.getTooltipFlag());
-                            var src = modifiersToSources.get(modif.getId());
+                            var src = modifiersToSources.get(modif.id());
                             finalTooltip.add(new AttributeModifierComponent(src, comp, this.font, this.leftPos - 16));
                         }
                     }
                     color = ChatFormatting.GRAY;
-                    double threshold = op == Operation.MULTIPLY_TOTAL ? 1.0005 : 0.0005;
+                    double threshold = op == Operation.ADD_MULTIPLIED_TOTAL ? 1.0005 : 0.0005;
 
                     if (opValue > threshold) {
                         color = ChatFormatting.YELLOW;
@@ -309,7 +307,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         boolean hover = this.getHoveredSlot(mouseX, mouseY) == inst;
         gfx.blit(TEXTURES, x, y, 142, hover ? ENTRY_HEIGHT : 0, 100, ENTRY_HEIGHT);
 
-        Component txt = Component.translatable(inst.getAttribute().getDescriptionId());
+        Component txt = Component.translatable(inst.getAttribute().value().getDescriptionId());
         int splitWidth = 60;
         List<FormattedCharSequence> lines = this.font.split(txt, splitWidth);
         // We can only actually display two lines here, but we need to forcibly create two lines and then scale down.
@@ -338,7 +336,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         stack.popPose();
         stack.pushPose();
 
-        var attr = (IFormattableAttribute) inst.getAttribute();
+        var attr = IFormattableAttribute.cast(inst.getAttribute());
         MutableComponent value = attr.toValueComponent(null, inst.getValue(), TooltipFlag.Default.NORMAL);
 
         scale = 1;
@@ -348,7 +346,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         }
 
         int color = 0xFFFFFF;
-        if (attr instanceof RangedAttribute ra) {
+        if (attr instanceof RangedAttribute) {
             if (inst.getValue() > inst.getBaseValue()) {
                 color = 0x55DD55;
             }
@@ -356,7 +354,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
                 color = 0xFF6060;
             }
         }
-        else if (attr instanceof BooleanAttribute ba && inst.getValue() > 0) {
+        else if (attr instanceof BooleanAttribute && inst.getValue() > 0) {
             color = 0x55DD55;
         }
         gfx.drawString(font, value, (int) ((x + 72 + (27 - this.font.width(value) * scale) / 2) / scale), (int) ((y + 7) / scale), color, true);
@@ -436,7 +434,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         return pMouseX >= pX - 1 && pMouseX < pX + pWidth + 1 && pMouseY >= pY - 1 && pMouseY < pY + pHeight + 1;
     }
 
-    private static DecimalFormat f = ItemStack.ATTRIBUTE_MODIFIER_FORMAT;
+    private static DecimalFormat f = IFormattableAttribute.FORMAT;
 
     public static String format(int n) {
         int log = (int) StrictMath.log10(n);

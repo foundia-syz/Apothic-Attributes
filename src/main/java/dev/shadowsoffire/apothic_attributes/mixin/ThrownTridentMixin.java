@@ -7,14 +7,13 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ThrownTrident;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 @Mixin(value = ThrownTrident.class, remap = false)
-public class ThrownTridentMixin extends AbstractArrow {
+public abstract class ThrownTridentMixin extends AbstractArrow {
 
-    protected ThrownTridentMixin(EntityType<? extends AbstractArrow> type, Level level, ItemStack stack) {
-        super(type, level, stack);
+    protected ThrownTridentMixin(EntityType<? extends AbstractArrow> entityType, Level level) {
+        super(entityType, level);
     }
 
     @ModifyConstant(method = "onHitEntity(Lnet/minecraft/world/phys/EntityHitResult;)V", constant = @Constant(floatValue = 8.0F))

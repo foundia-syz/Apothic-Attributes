@@ -1,10 +1,10 @@
 package dev.shadowsoffire.apothic_attributes.api.client;
 
 import java.util.Set;
-import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -21,10 +21,10 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 public class GatherSkippedAttributeTooltipsEvent extends PlayerEvent {
 
     protected final ItemStack stack;
-    protected final Set<UUID> skips;
+    protected final Set<ResourceLocation> skips;
     protected final TooltipFlag flag;
 
-    public GatherSkippedAttributeTooltipsEvent(ItemStack stack, @Nullable Player player, Set<UUID> skips, TooltipFlag flag) {
+    public GatherSkippedAttributeTooltipsEvent(ItemStack stack, @Nullable Player player, Set<ResourceLocation> skips, TooltipFlag flag) {
         super(player);
         this.stack = stack;
         this.skips = skips;
@@ -46,9 +46,9 @@ public class GatherSkippedAttributeTooltipsEvent extends PlayerEvent {
     }
 
     /**
-     * Mark the UUID of a specific attribute modifier as skipped, causing it to not be displayed in the tooltip.
+     * Mark the ResourceLocation of a specific attribute modifier as skipped, causing it to not be displayed in the tooltip.
      */
-    public void skipUUID(UUID id) {
+    public void skipID(ResourceLocation id) {
         this.skips.add(id);
     }
 
