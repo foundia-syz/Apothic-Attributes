@@ -1,3 +1,6 @@
+## 2.2.0
+* Updated to Minecraft 1.21.
+
 ## 2.1.2
 * Removed leftover code from the transition to neo's flying attribute.
 * Repackaged `.mobfx` to `.mob_effect`.
