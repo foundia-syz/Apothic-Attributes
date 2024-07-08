@@ -67,11 +67,6 @@ public abstract class LivingEntityMixin extends Entity {
     @Shadow
     public abstract MobEffectInstance getEffect(Holder<MobEffect> ef);
 
-    @Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/damagesource/CombatRules;getDamageAfterAbsorb(Lnet/minecraft/world/entity/LivingEntity;FLnet/minecraft/world/damagesource/DamageSource;FF)F"), method = "getDamageAfterArmorAbsorb(Lnet/minecraft/world/damagesource/DamageSource;F)F", require = 1)
-    public float apoth_applyArmorPen(LivingEntity entity, float amount, DamageSource src, float armor, float toughness) {
-        return ALCombatRules.getDamageAfterArmor(entity, src, amount, armor, toughness);
-    }
-
     @Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/world/damagesource/CombatRules;getDamageAfterMagicAbsorb(FF)F"), method = "getDamageAfterMagicAbsorb(Lnet/minecraft/world/damagesource/DamageSource;F)F", require = 1)
     public float apoth_applyProtPen(float amount, float protPoints, DamageSource src, float amt2) {
         return ALCombatRules.getDamageAfterProtection((LivingEntity) (Object) this, src, amount, protPoints);

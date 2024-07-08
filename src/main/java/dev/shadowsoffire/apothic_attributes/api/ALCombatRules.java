@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 
 import dev.shadowsoffire.apothic_attributes.ALConfig;
 import dev.shadowsoffire.apothic_attributes.api.ALObjects.Attributes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
 /**
  * Contains AL-specific combat calculations for armor and protection values.
@@ -67,7 +70,6 @@ public class ALCombatRules {
      * With the introduction of this attribute, armor toughness acts as a shield against armor bypass.<br>
      * Each point of armor toughness reduces the effectiveness of all armor bypass by 2%, up to 60%.<br>
      * That said, armor toughness no longer reduces damage, and only reduces armor bypass.
-     * <p>
      *
      * @param target    The attack's target.
      * @param src       The DamageSource of the attack.
@@ -91,8 +93,21 @@ public class ALCombatRules {
             }
         }
 
-        if (armor <= 0) return amount;
-        return amount * getArmorDamageReduction(amount, armor);
+        if (armor <= 0) {
+            return amount;
+        }
+
+        float reduction = getArmorDamageReduction(amount, armor);
+        if (src.getWeaponItem() != null && target.level() instanceof ServerLevel serverlevel) {
+            // Normally we just work with the reduction, or the multiplier on the final damage value.
+            // However, the vanilla ARMOR_EFFECTIVENESS enchantment effect works on the "effectiveness", which is how much damage the armor would block.
+            // So we have to translate from reduction to effectiveness and back again to support the effect.
+            float effectiveness = 1 - reduction;
+            effectiveness = Mth.clamp(EnchantmentHelper.modifyArmorEffectiveness(serverlevel, src.getWeaponItem(), target, src, effectiveness), 0.0F, 1.0F);
+            reduction = 1 - effectiveness;
+        }
+
+        return amount * reduction;
     }
 
     /**
