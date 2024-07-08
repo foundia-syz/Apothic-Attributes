@@ -211,17 +211,9 @@ public class AttributesGui implements Renderable, GuiEventListener {
 
             list.add(CommonComponents.EMPTY);
 
-            ChatFormatting color = ChatFormatting.GRAY;
-            if (attr instanceof RangedAttribute) {
-                if (inst.getValue() > inst.getBaseValue()) {
-                    color = ChatFormatting.YELLOW;
-                }
-                else if (inst.getValue() < inst.getBaseValue()) {
-                    color = ChatFormatting.RED;
-                }
-            }
+            int color = getValueColor(inst, ChatFormatting.GRAY.getColor());
             MutableComponent valueComp = fAttr.toValueComponent(null, inst.getValue(), ApothicAttributes.getTooltipFlag());
-            list.add(Component.translatable("apothic_attributes.gui.current", valueComp.withStyle(color)).withStyle(ChatFormatting.GRAY));
+            list.add(Component.translatable("apothic_attributes.gui.current", valueComp.withStyle(Style.EMPTY.withColor(color))).withStyle(ChatFormatting.GRAY));
 
             MutableComponent baseVal = fAttr.toValueComponent(null, inst.getBaseValue(), ApothicAttributes.getTooltipFlag());
 
@@ -255,8 +247,9 @@ public class AttributesGui implements Renderable, GuiEventListener {
                 Component[] opValues = new Component[3];
 
                 for (Operation op : Operation.values()) {
+                    double baseValue = op == Operation.ADD_MULTIPLIED_TOTAL ? 1 : 0;
                     List<AttributeModifier> modifiers = new ArrayList<>(inst.getModifiers(op).values());
-                    double opValue = modifiers.stream().mapToDouble(AttributeModifier::amount).reduce(op == Operation.ADD_MULTIPLIED_TOTAL ? 1 : 0, (res, elem) -> op == Operation.ADD_MULTIPLIED_TOTAL ? res * (1 + elem) : res + elem);
+                    double opValue = modifiers.stream().mapToDouble(AttributeModifier::amount).reduce(baseValue, (res, elem) -> op == Operation.ADD_MULTIPLIED_TOTAL ? res * (1 + elem) : res + elem);
 
                     modifiers.sort(ModifierSourceType.compareBySource(modifiersToSources));
                     for (AttributeModifier modif : modifiers) {
@@ -266,16 +259,9 @@ public class AttributesGui implements Renderable, GuiEventListener {
                             finalTooltip.add(new AttributeModifierComponent(src, comp, this.font, this.leftPos - 16));
                         }
                     }
-                    color = ChatFormatting.GRAY;
-                    double threshold = op == Operation.ADD_MULTIPLIED_TOTAL ? 1.0005 : 0.0005;
 
-                    if (opValue > threshold) {
-                        color = ChatFormatting.YELLOW;
-                    }
-                    else if (opValue < -threshold) {
-                        color = ChatFormatting.RED;
-                    }
-                    Component valueComp2 = fAttr.toValueComponent(op, opValue, ApothicAttributes.getTooltipFlag()).withStyle(color);
+                    color = getValueColor(attr, opValue, baseValue, ChatFormatting.GRAY.getColor());
+                    Component valueComp2 = fAttr.toValueComponent(op, opValue, ApothicAttributes.getTooltipFlag()).withStyle(Style.EMPTY.withColor(color));
                     Component comp = Component.translatable("apothic_attributes.gui." + op.name().toLowerCase(Locale.ROOT), valueComp2).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
                     opValues[op.ordinal()] = comp;
                 }
@@ -345,18 +331,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
             stack.scale(scale, scale, 1);
         }
 
-        int color = 0xFFFFFF;
-        if (attr instanceof RangedAttribute) {
-            if (inst.getValue() > inst.getBaseValue()) {
-                color = 0x55DD55;
-            }
-            else if (inst.getValue() < inst.getBaseValue()) {
-                color = 0xFF6060;
-            }
-        }
-        else if (attr instanceof BooleanAttribute && inst.getValue() > 0) {
-            color = 0x55DD55;
-        }
+        int color = getValueColor(inst, ChatFormatting.WHITE.getColor());
         gfx.drawString(font, value, (int) ((x + 72 + (27 - this.font.width(value) * scale) / 2) / scale), (int) ((y + 7) / scale), color, true);
         stack.popPose();
     }
@@ -442,6 +417,39 @@ public class AttributesGui implements Renderable, GuiEventListener {
         if (log == 5) return f.format(n / 1000D) + "K";
         if (log <= 8) return f.format(n / 1000000D) + "M";
         else return f.format(n / 1000000000D) + "B";
+    }
+
+    public static int getValueColor(AttributeInstance inst, int fallbackColor) {
+        return getValueColor(inst.getAttribute().value(), inst.getValue(), inst.getBaseValue(), fallbackColor);
+    }
+
+    public static int getValueColor(Attribute attr, double value, double base, int fallbackColor) {
+        if (value == base) {
+            return fallbackColor;
+        }
+
+        if (attr instanceof RangedAttribute) {
+            boolean isPositive = value > base;
+            return translateColor(attr.getStyle(isPositive));
+        }
+        else if (attr instanceof BooleanAttribute) {
+            boolean isPositive = value > 0;
+            return translateColor(attr.getStyle(isPositive));
+        }
+
+        return fallbackColor;
+    }
+
+    /**
+     * Translates the {@link ChatFormatting} values used by {@link Attribute#getStyle(boolean)} to colors better visible in the Attributes GUI.
+     */
+    private static int translateColor(ChatFormatting color) {
+        return switch (color) {
+            case BLUE -> 0x55DD55;
+            case RED -> 0xFF6060;
+            case GRAY -> 0xFFFFFF;
+            default -> color.getColor();
+        };
     }
 
     public class HideUnchangedButton extends AbstractButton {

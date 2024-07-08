@@ -76,11 +76,11 @@ public interface IFormattableAttribute {
         MutableComponent comp;
 
         if (value > 0.0D) {
-            comp = Component.translatable("apothic_attributes.modifier.plus", this.toValueComponent(modif.operation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(ChatFormatting.BLUE);
+            comp = Component.translatable("apothic_attributes.modifier.plus", this.toValueComponent(modif.operation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(attr.getStyle(true));
         }
         else {
             value *= -1.0D;
-            comp = Component.translatable("apothic_attributes.modifier.take", this.toValueComponent(modif.operation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(ChatFormatting.RED);
+            comp = Component.translatable("apothic_attributes.modifier.take", this.toValueComponent(modif.operation(), value, flag), Component.translatable(attr.getDescriptionId())).withStyle(attr.getStyle(false));
         }
 
         return comp.append(this.getDebugInfo(modif, flag));

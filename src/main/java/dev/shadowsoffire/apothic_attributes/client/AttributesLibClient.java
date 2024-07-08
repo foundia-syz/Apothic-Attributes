@@ -43,7 +43,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffect.AttributeTemplate;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
@@ -170,10 +170,9 @@ public class AttributesLibClient {
         }
     }
 
-    public static Multimap<Holder<Attribute>, AttributeModifier> getSortedModifiers(ItemStack stack, EquipmentSlot slot) {
-        var unsorted = stack.getAttributeModifiers();
+    public static Multimap<Holder<Attribute>, AttributeModifier> getSortedModifiers(ItemStack stack, EquipmentSlotGroup slot) {
         Multimap<Holder<Attribute>, AttributeModifier> map = AttributeHelper.sortedMap();
-        unsorted.forEach(slot, (attr, modif) -> {
+        stack.forEachModifier(slot, (attr, modif) -> {
             if (attr != null && modif != null) {
                 map.put(attr, modif);
             }
@@ -192,31 +191,12 @@ public class AttributesLibClient {
     }
 
     private static void applyModifierTooltips(@Nullable Player player, ItemStack stack, Consumer<Component> tooltip, TooltipFlag flag) {
-        Multimap<Holder<Attribute>, AttributeModifier> mainhand = getSortedModifiers(stack, EquipmentSlot.MAINHAND);
-        Multimap<Holder<Attribute>, AttributeModifier> offhand = getSortedModifiers(stack, EquipmentSlot.OFFHAND);
-        Multimap<Holder<Attribute>, AttributeModifier> dualHand = AttributeHelper.sortedMap();
-        for (Holder<Attribute> atr : mainhand.keys()) {
-            Collection<AttributeModifier> modifMh = mainhand.get(atr);
-            Collection<AttributeModifier> modifOh = offhand.get(atr);
-            modifMh.stream().filter(a1 -> modifOh.stream().anyMatch(a2 -> a1.id().equals(a2.id()))).forEach(modif -> dualHand.put(atr, modif));
-        }
-
-        dualHand.values().forEach(m -> {
-            mainhand.values().remove(m);
-            offhand.values().removeIf(m1 -> m1.id().equals(m.id()));
-        });
-
         Set<ResourceLocation> skips = new HashSet<>();
         NeoForge.EVENT_BUS.post(new GatherSkippedAttributeTooltipsEvent(stack, player, skips, flag));
 
-        applyTextFor(player, stack, tooltip, dualHand, "both_hands", skips, flag);
-        applyTextFor(player, stack, tooltip, mainhand, EquipmentSlot.MAINHAND.getName(), skips, flag);
-        applyTextFor(player, stack, tooltip, offhand, EquipmentSlot.OFFHAND.getName(), skips, flag);
-
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (slot.ordinal() < 2) continue;
-            Multimap<Holder<Attribute>, AttributeModifier> modifiers = getSortedModifiers(stack, slot);
-            applyTextFor(player, stack, tooltip, modifiers, slot.getName(), skips, flag);
+        for (EquipmentSlotGroup group : EquipmentSlotGroup.values()) {
+            Multimap<Holder<Attribute>, AttributeModifier> modifiers = getSortedModifiers(stack, group);
+            applyTextFor(player, stack, tooltip, modifiers, group, skips, flag);
         }
     }
 
@@ -249,12 +229,13 @@ public class AttributesLibClient {
 
     private static record BaseModifier(AttributeModifier base, List<AttributeModifier> children) {}
 
-    private static void applyTextFor(@Nullable Player player, ItemStack stack, Consumer<Component> tooltip, Multimap<Holder<Attribute>, AttributeModifier> modifierMap, String group, Set<ResourceLocation> skips, TooltipFlag flag) {
+    private static void applyTextFor(@Nullable Player player, ItemStack stack, Consumer<Component> tooltip, Multimap<Holder<Attribute>, AttributeModifier> modifierMap, EquipmentSlotGroup group, Set<ResourceLocation> skips,
+        TooltipFlag flag) {
         if (!modifierMap.isEmpty()) {
             modifierMap.values().removeIf(m -> skips.contains(m.id()));
 
             tooltip.accept(Component.empty());
-            tooltip.accept(Component.translatable("item.modifiers." + group).withStyle(ChatFormatting.GRAY));
+            tooltip.accept(Component.translatable("item.modifiers." + group.getSerializedName()).withStyle(ChatFormatting.GRAY));
 
             if (modifierMap.isEmpty()) return;
 
