@@ -18,8 +18,10 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -234,6 +236,16 @@ public class ALObjects {
 
         @ApiStatus.Internal
         public static void bootstrap() {}
+    }
+
+    public static class Tags {
+
+        /**
+         * An attribute with a dynamic base cannot have its value computed out of context, and is instead treated as a list of modifiers
+         * that will be applied when the event occurs. The applied modifiers will use the normal rules of {@link Operation} but on the dynamic base.
+         */
+        public static final TagKey<Attribute> DYNAMIC_BASE_ATTRIBUTES = TagKey.create(Registries.ATTRIBUTE, AttributesLib.loc("dynamic_base"));
+
     }
 
     @ApiStatus.Internal

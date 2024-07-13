@@ -28,6 +28,9 @@
 	"attributeslib.gui.press_shift": "Hold Shift for more info.",
 	"attributeslib.gui.current": "Current: %s",
 	"attributeslib.gui.show_attributes": "Show Attributes",
+    "attributeslib.gui.formula.base": "Base",
+    "attributeslib.gui.formula.value": "Value",
+    "attributeslib.gui.no_modifiers": "No Modifiers",
 
 	"attribute.name.generic.armor.desc": "Increases physical damage reduction.",
 	"attribute.name.generic.armor_toughness.desc": "Reduces the effectiveness of enemy armor reduction.",

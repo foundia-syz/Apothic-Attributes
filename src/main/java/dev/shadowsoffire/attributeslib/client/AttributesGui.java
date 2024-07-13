@@ -16,6 +16,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import dev.shadowsoffire.attributeslib.ALConfig;
 import dev.shadowsoffire.attributeslib.AttributesLib;
+import dev.shadowsoffire.attributeslib.api.ALObjects;
 import dev.shadowsoffire.attributeslib.api.IFormattableAttribute;
 import dev.shadowsoffire.attributeslib.impl.BooleanAttribute;
 import dev.shadowsoffire.placebo.PlaceboClient;
@@ -186,15 +187,22 @@ public class AttributesGui implements Renderable, GuiEventListener {
     protected void renderTooltip(GuiGraphics gfx, int mouseX, int mouseY) {
         AttributeInstance inst = this.getHoveredSlot(mouseX, mouseY);
         if (inst != null) {
+            boolean isDynamic = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(inst.getAttribute()).is(ALObjects.Tags.DYNAMIC_BASE_ATTRIBUTES);
+
             Attribute attr = inst.getAttribute();
             IFormattableAttribute fAttr = (IFormattableAttribute) attr;
             List<Component> list = new ArrayList<>();
             MutableComponent name = Component.translatable(attr.getDescriptionId()).withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).withUnderlined(true));
 
+            if (isDynamic) {
+                name.append(Component.literal((" (dynamic)")).withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY).withUnderlined(false)));
+            }
+
             if (AttributesLib.getTooltipFlag().isAdvanced()) {
                 Style style = Style.EMPTY.withColor(ChatFormatting.GRAY).withUnderlined(false);
                 name.append(Component.literal(" [" + BuiltInRegistries.ATTRIBUTE.getKey(attr) + "]").withStyle(style));
             }
+
             list.add(name);
 
             String key = attr.getDescriptionId() + ".desc";
@@ -208,8 +216,6 @@ public class AttributesGui implements Renderable, GuiEventListener {
                 list.add(txt);
             }
 
-            list.add(CommonComponents.EMPTY);
-
             ChatFormatting color = ChatFormatting.GRAY;
             if (attr instanceof RangedAttribute) {
                 if (inst.getValue() > inst.getBaseValue()) {
@@ -219,21 +225,26 @@ public class AttributesGui implements Renderable, GuiEventListener {
                     color = ChatFormatting.RED;
                 }
             }
-            MutableComponent valueComp = fAttr.toValueComponent(null, inst.getValue(), AttributesLib.getTooltipFlag());
-            list.add(Component.translatable("attributeslib.gui.current", valueComp.withStyle(color)).withStyle(ChatFormatting.GRAY));
 
-            MutableComponent baseVal = fAttr.toValueComponent(null, inst.getBaseValue(), AttributesLib.getTooltipFlag());
+            Component valueComp = fAttr.toValueComponent(null, inst.getValue(), AttributesLib.getTooltipFlag()).withStyle(color);
+            Component baseComp = fAttr.toValueComponent(null, inst.getBaseValue(), AttributesLib.getTooltipFlag()).withStyle(ChatFormatting.GRAY);
 
-            baseVal = Component.translatable("attributeslib.gui.base", baseVal);
-            if (attr instanceof RangedAttribute ra) {
-                Component min = fAttr.toValueComponent(null, ra.getMinValue(), AttributesLib.getTooltipFlag());
-                min = Component.translatable("attributeslib.gui.min", min);
-                Component max = fAttr.toValueComponent(null, ra.getMaxValue(), AttributesLib.getTooltipFlag());
-                max = Component.translatable("attributeslib.gui.max", max);
-                list.add(Component.translatable("%s \u2507 %s \u2507 %s", baseVal, min, max).withStyle(ChatFormatting.GRAY));
-            }
-            else {
-                list.add(baseVal.withStyle(ChatFormatting.GRAY));
+            if (!isDynamic) {
+                list.add(CommonComponents.EMPTY);
+                list.add(Component.translatable("attributeslib.gui.current", valueComp).withStyle(ChatFormatting.GRAY));
+
+                Component base = Component.translatable("attributeslib.gui.base", baseComp).withStyle(ChatFormatting.GRAY);
+
+                if (attr instanceof RangedAttribute ra) {
+                    Component min = fAttr.toValueComponent(null, ra.getMinValue(), AttributesLib.getTooltipFlag());
+                    min = Component.translatable("attributeslib.gui.min", min);
+                    Component max = fAttr.toValueComponent(null, ra.getMaxValue(), AttributesLib.getTooltipFlag());
+                    max = Component.translatable("attributeslib.gui.max", max);
+                    list.add(Component.translatable("%s \u2507 %s \u2507 %s", base, min, max).withStyle(ChatFormatting.GRAY));
+                }
+                else {
+                    list.add(base);
+                }
             }
 
             List<ClientTooltipComponent> finalTooltip = new ArrayList<>(list.size());
@@ -251,7 +262,8 @@ public class AttributesGui implements Renderable, GuiEventListener {
                     type.extract(this.player, (modif, source) -> modifiersToSources.put(modif.getId(), source));
                 }
 
-                Component[] opValues = new Component[3];
+                MutableComponent[] opValues = new MutableComponent[3];
+                double[] numericValues = new double[3];
 
                 for (Operation op : Operation.values()) {
                     List<AttributeModifier> modifiers = new ArrayList<>(inst.getModifiers(op));
@@ -275,16 +287,23 @@ public class AttributesGui implements Renderable, GuiEventListener {
                         color = ChatFormatting.RED;
                     }
                     Component valueComp2 = fAttr.toValueComponent(op, opValue, AttributesLib.getTooltipFlag()).withStyle(color);
-                    Component comp = Component.translatable("attributeslib.gui." + op.name().toLowerCase(Locale.ROOT), valueComp2).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
+                    MutableComponent comp = Component.translatable("attributeslib.gui." + op.name().toLowerCase(Locale.ROOT), valueComp2).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
                     opValues[op.ordinal()] = comp;
+                    numericValues[op.ordinal()] = opValue;
                 }
 
-                if (AttributesLib.getTooltipFlag().isAdvanced()) {
-                    this.addComp(CommonComponents.EMPTY, finalTooltip);
-                    for (Component comp : opValues) {
-                        this.addComp(comp, finalTooltip);
-                    }
-                }
+                this.addComp(CommonComponents.EMPTY, finalTooltip);
+                this.addComp(Component.literal("Modifier Formula").withStyle(ChatFormatting.GOLD), finalTooltip);
+
+                Component base = isDynamic ? Component.translatable("attributeslib.gui.formula.base") : baseComp;
+                Component value = isDynamic ? Component.translatable("attributeslib.gui.formula.value") : valueComp;
+
+                Component formula = buildFormula(base, value, numericValues);
+                this.addComp(formula, finalTooltip);
+            }
+            else if (isDynamic) {
+                this.addComp(CommonComponents.EMPTY, finalTooltip);
+                this.addComp(Component.translatable("attributeslib.gui.no_modifiers").withStyle(ChatFormatting.GOLD), finalTooltip);
             }
 
             gfx.renderTooltipInternal(font, finalTooltip, this.leftPos - 16 - finalTooltip.stream().map(c -> c.getWidth(this.font)).max(Integer::compare).get(), mouseY, DefaultTooltipPositioner.INSTANCE);
@@ -337,6 +356,10 @@ public class AttributesGui implements Renderable, GuiEventListener {
 
         var attr = (IFormattableAttribute) inst.getAttribute();
         MutableComponent value = attr.toValueComponent(null, inst.getValue(), TooltipFlag.Default.NORMAL);
+
+        if (BuiltInRegistries.ATTRIBUTE.wrapAsHolder(inst.getAttribute()).is(ALObjects.Tags.DYNAMIC_BASE_ATTRIBUTES)) {
+            value = Component.literal("\uFFFD");
+        }
 
         scale = 1;
         if (this.font.width(value) > 27) {
@@ -441,6 +464,61 @@ public class AttributesGui implements Renderable, GuiEventListener {
         if (log == 5) return f.format(n / 1000D) + "K";
         if (log <= 8) return f.format(n / 1000000D) + "M";
         else return f.format(n / 1000000000D) + "B";
+    }
+
+    /**
+     * Builds a component containing the mathematical representation of the attribute calculations.
+     * 
+     * @param base          A component of the base value. May be a string if the attribute is dynamic.
+     * @param value         A component of the final value. May be a string if the attribute is dynamic.
+     * @param numericValues The modifier totals, in operation ordinal order (add, mulBase, mulTotal)
+     * @return A component holding the formula with colors already applied.
+     */
+    public static Component buildFormula(Component base, Component value, double[] numericValues) {
+        double add = numericValues[0];
+        double mulBase = numericValues[1];
+        double mulTotal = numericValues[2];
+
+        boolean isAddNeg = add < 0;
+        boolean isMulNeg = mulBase < 0;
+
+        String addSym = isAddNeg ? "-" : "+";
+        add = Math.abs(add);
+
+        String mulBaseSym = isMulNeg ? "-" : "+";
+        mulBase = Math.abs(mulBase);
+
+        String addStr = f.format(add);
+        String mulBaseStr = f.format(mulBase);
+        String mulTotalStr = f.format(mulTotal);
+
+        String formula = "%2$s";
+
+        if (add != 0) {
+            ChatFormatting color = isAddNeg ? ChatFormatting.RED : ChatFormatting.YELLOW;
+            formula = formula + " " + colored(addSym + " " + addStr, color);
+        }
+
+        if (mulBase != 0) {
+            String withParens = add == 0 ? formula : "(%s)".formatted(formula);
+            ChatFormatting color = isMulNeg ? ChatFormatting.RED : ChatFormatting.YELLOW;
+            formula = withParens + " " + colored(mulBaseSym + " " + mulBaseStr + " * ", color) + withParens;
+        }
+
+        if (mulTotal != 1) {
+            String withParens = add == 0 && mulBase == 0 ? formula : "(%s)".formatted(formula);
+            ChatFormatting color = mulTotal < 1 ? ChatFormatting.RED : ChatFormatting.YELLOW;
+            formula = colored(mulTotalStr + " * ", color) + withParens;
+        }
+
+        return Component.translatable("%1$s = " + formula, value, base).withStyle(ChatFormatting.GRAY);
+    }
+
+    /**
+     * Colors a string using legacy formatting codes. Terminates the string with {@link ChatFormatting#RESET}.
+     */
+    private static String colored(String str, ChatFormatting color) {
+        return "" + ChatFormatting.PREFIX_CODE + color.getChar() + str + ChatFormatting.PREFIX_CODE + ChatFormatting.RESET.getChar();
     }
 
     public class HideUnchangedButton extends ImageButton {
