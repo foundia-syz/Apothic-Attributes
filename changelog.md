@@ -1,3 +1,10 @@
+## 1.3.6
+* Fixed the random seed selection for Dodge Chance to be properly random.
+  * The prior seed selection would cause non-uniform values to be selected, causing players to dodge or not dodge for long periods of time.
+* Added support for display of Dynamic Attributes (which are more like stacks of modifiers to be applied to some value later in time) in the attributes GUI.
+  * These attributes will need to be tagged as `attributeslib:dynamic_base` to be picked up.
+* Added the full modifier formula to the displayed elements in the attributes GUI.
+
 ## 1.3.5
 * Updated Potion tooltips to not look so out-of-place.
 
