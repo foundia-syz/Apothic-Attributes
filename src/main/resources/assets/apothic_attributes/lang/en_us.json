@@ -28,6 +28,11 @@
     "apothic_attributes.gui.press_shift": "Hold Shift for more info.",
     "apothic_attributes.gui.current": "Current: %s",
     "apothic_attributes.gui.show_attributes": "Show Attributes",
+    "apothic_attributes.gui.dynamic": "(dynamic)",
+    "apothic_attributes.gui.formula": "Modifier Formula",
+    "apothic_attributes.gui.formula.base": "Base",
+    "apothic_attributes.gui.formula.value": "Value",
+    "apothic_attributes.gui.no_modifiers": "No Modifiers",
 
     "attribute.name.generic.armor.desc": "Increases physical damage reduction.",
     "attribute.name.generic.armor_toughness.desc": "Reduces the effectiveness of enemy armor reduction.",

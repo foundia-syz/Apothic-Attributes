@@ -274,15 +274,13 @@ public class AttributeEvents {
         if (attacker instanceof Player player) {
             double atkRange = player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
             double atkRangeSqr = atkRange * atkRange;
-            dodgeRand.setSeed(target.tickCount);
             if (attacker.distanceToSqr(target) <= atkRangeSqr && isDodging(target)) {
                 this.onDodge(target);
                 e.setCanceled(true);
             }
         }
         else if (attacker instanceof Mob mob) {
-            dodgeRand.setSeed(target.tickCount);
-            if (mob.isWithinMeleeAttackRange(target) && dodgeRand.nextFloat() <= dodgeChance) {
+            if (mob.isWithinMeleeAttackRange(target) && isDodging(target)) {
                 this.onDodge(target);
                 e.setCanceled(true);
             }
@@ -404,7 +402,7 @@ public class AttributeEvents {
      * @return True if the target may dodge, false otherwise.
      */
     public static boolean isDodging(LivingEntity target) {
-        double chance = target.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE.get());
+        double chance = target.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE);
         dodgeRand.setSeed(computeDodgeSeed(target));
         return dodgeRand.nextFloat() <= chance;
     }
