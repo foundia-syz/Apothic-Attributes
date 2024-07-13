@@ -264,12 +264,6 @@ public class AttributeEvents {
     }
 
     /**
-     * Random used for dodge calculations.<br>
-     * This random is seeded with the target entity's tick count before use.
-     */
-    private static Random dodgeRand = new Random();
-
-    /**
      * Handles {@link ALObjects#DODGE_CHANCE} for melee attacks.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
@@ -277,12 +271,11 @@ public class AttributeEvents {
         LivingEntity target = e.getEntity();
         if (target.level().isClientSide) return;
         Entity attacker = e.getSource().getDirectEntity();
-        double dodgeChance = target.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE);
         if (attacker instanceof Player player) {
             double atkRange = player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);
             double atkRangeSqr = atkRange * atkRange;
             dodgeRand.setSeed(target.tickCount);
-            if (attacker.distanceToSqr(target) <= atkRangeSqr && dodgeRand.nextFloat() <= dodgeChance) {
+            if (attacker.distanceToSqr(target) <= atkRangeSqr && isDodging(target)) {
                 this.onDodge(target);
                 e.setCanceled(true);
             }
@@ -303,10 +296,8 @@ public class AttributeEvents {
     public void dodge(ProjectileImpactEvent e) {
         Entity target = e.getRayTraceResult() instanceof EntityHitResult entRes ? entRes.getEntity() : null;
         if (target instanceof LivingEntity lvTarget) {
-            double dodgeChance = lvTarget.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE);
             // We can skip the distance check for projectiles, as "Projectile Impact" means the projectile is on the target.
-            dodgeRand.setSeed(target.tickCount);
-            if (dodgeRand.nextFloat() <= dodgeChance) {
+            if (isDodging(lvTarget)) {
                 this.onDodge(lvTarget);
                 e.setCanceled(true);
             }
@@ -383,5 +374,38 @@ public class AttributeEvents {
     @SubscribeEvent
     public void cmds(ApotheosisCommandEvent e) {
         BonusModifierCommand.register(e.getRoot());
+    }
+
+    /**
+     * Random used for dodge calculations.<br>
+     * This random is seeded with the target entity's tick count before use.
+     */
+    private static Random dodgeRand = new Random();
+
+    /**
+     * Computes the dodge random seed for the entity. This seed is only unique for the current tick, so that
+     * multiple damage instances in the same tick are all dodged.
+     * <p>
+     * Without this, it would be possible for multiple-instances attacks to only be partially dodged.
+     * 
+     * @param target The entity being attecked who is rolling to dodge.
+     * @return The random seed to use when computing the dodge roll
+     */
+    public static int computeDodgeSeed(LivingEntity target) {
+        int delta = 0x9E3779B9;
+        int base = target.tickCount + target.getUUID().hashCode();
+        return base + delta + (base << 6) + (base >> 2);
+    }
+
+    /**
+     * Checks if the target entity will dodge attacks in the current tick, by checking the {@link ALObjects.Attributes#DODGE_CHANCE} value and rolling a random.
+     * 
+     * @param target The entity being attecked who is rolling to dodge.
+     * @return True if the target may dodge, false otherwise.
+     */
+    public static boolean isDodging(LivingEntity target) {
+        double chance = target.getAttributeValue(ALObjects.Attributes.DODGE_CHANCE.get());
+        dodgeRand.setSeed(computeDodgeSeed(target));
+        return dodgeRand.nextFloat() <= chance;
     }
 }
