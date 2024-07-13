@@ -211,7 +211,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
             list.add(CommonComponents.EMPTY);
 
             ChatFormatting color = ChatFormatting.GRAY;
-            if (attr instanceof RangedAttribute ra) {
+            if (attr instanceof RangedAttribute) {
                 if (inst.getValue() > inst.getBaseValue()) {
                     color = ChatFormatting.YELLOW;
                 }
@@ -345,7 +345,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         }
 
         int color = 0xFFFFFF;
-        if (attr instanceof RangedAttribute ra) {
+        if (attr instanceof RangedAttribute) {
             if (inst.getValue() > inst.getBaseValue()) {
                 color = 0x55DD55;
             }
@@ -353,7 +353,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
                 color = 0xFF6060;
             }
         }
-        else if (attr instanceof BooleanAttribute ba && inst.getValue() > 0) {
+        else if (attr instanceof BooleanAttribute && inst.getValue() > 0) {
             color = 0x55DD55;
         }
         gfx.drawString(font, value, (int) ((x + 72 + (27 - this.font.width(value) * scale) / 2) / scale), (int) ((y + 7) / scale), color, true);
