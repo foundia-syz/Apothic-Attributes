@@ -290,7 +290,7 @@ public class ALObjects {
 
     public static class Components {
 
-        public static final Supplier<DataComponentType<ItemAttributeModifiers>> BONUS_ATTRIBUTE_MODIFIERS = R.component("bonus_attribute_modifiers",
+        public static final DataComponentType<ItemAttributeModifiers> BONUS_ATTRIBUTE_MODIFIERS = R.component("bonus_attribute_modifiers",
             builder -> builder.persistent(ItemAttributeModifiers.CODEC).networkSynchronized(ItemAttributeModifiers.STREAM_CODEC).cacheEncoding());
 
         @ApiStatus.Internal
