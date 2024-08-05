@@ -1,3 +1,6 @@
+## 2.2.2
+* Updated to Placebo 9.3.5.
+
 ## 2.2.1
 * Fixed the random seed selection for Dodge Chance to be properly random.
   * The prior seed selection would cause non-uniform values to be selected, causing players to dodge or not dodge for long periods of time.
