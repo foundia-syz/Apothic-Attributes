@@ -1,6 +1,7 @@
-package dev.shadowsoffire.apothic_attributes.impl;
+package dev.shadowsoffire.apothic_attributes.mixin;
 
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Mixin;
 
 import dev.shadowsoffire.apothic_attributes.api.IFormattableAttribute;
 import net.minecraft.ChatFormatting;
@@ -10,37 +11,28 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
 import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.neoforge.common.BooleanAttribute;
 
 /**
- * A Boolean Attribute is one which displays modifiers as "Enables" or "Forcibly Disables".<br>
- * For these attributes, you should only use the following modifier values:
- * <ul>
- * <li>A value of 1 with {@link Operation#ADDITION} to enable the effect.</li>
- * <li>A value of -1 with {@link Operation#MULTIPLY_TOTAL} to forcibly disable the effect.</li>
- * </ul>
- * This behavior allows for multiple enables to coexist, not removing the effect unless all enabling modifiers are removed.<br>
- * Additionally, it permits forcibly disabling the attribute through multiply total.
- * <p>
- * Modifiers not using one of the specified modifiers noted above will display as an error condition.
+ * Handles formatting rules for boolean attributes since Neo is not aware of the formatting API.
  */
-public class BooleanAttribute extends Attribute implements IFormattableAttribute {
-
-    public BooleanAttribute(String pDescriptionId, boolean defaultValue) {
-        super(pDescriptionId, defaultValue ? 1 : 0);
-    }
+@Mixin(value = BooleanAttribute.class, remap = false)
+public class BooleanAttributeMixin implements IFormattableAttribute {
 
     @Override
     public MutableComponent toValueComponent(@Nullable Operation op, double value, TooltipFlag flag) {
         if (op == null) {
             return Component.translatable("apothic_attributes.value.boolean." + (value > 0 ? "enabled" : "disabled"));
         }
-        else if (op == Operation.ADD_VALUE && (int) value == 1) {
+        else if (op == Operation.ADD_VALUE && value > 0) {
             return Component.translatable("apothic_attributes.value.boolean.enable");
         }
         else if (op == Operation.ADD_MULTIPLIED_TOTAL && (int) value == -1) {
             return Component.translatable("apothic_attributes.value.boolean.force_disable");
         }
-        else return Component.translatable("apothic_attributes.value.boolean.invalid");
+        else {
+            return Component.translatable("apothic_attributes.value.boolean.invalid");
+        }
     }
 
     @Override
@@ -59,14 +51,6 @@ public class BooleanAttribute extends Attribute implements IFormattableAttribute
         }
 
         return comp.append(this.getDebugInfo(modif, flag));
-    }
-
-    @Override
-    public double sanitizeValue(double value) {
-        if (Double.isNaN(value)) {
-            return 0;
-        }
-        return value > 0 ? 1 : 0;
     }
 
 }

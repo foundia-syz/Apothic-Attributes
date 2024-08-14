@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 
 import dev.shadowsoffire.apothic_attributes.ApothicAttributes;
-import dev.shadowsoffire.apothic_attributes.impl.BooleanAttribute;
 import dev.shadowsoffire.apothic_attributes.impl.PercentBasedAttribute;
 import dev.shadowsoffire.apothic_attributes.mob_effect.BleedingEffect;
 import dev.shadowsoffire.apothic_attributes.mob_effect.DetonationEffect;
@@ -32,6 +31,7 @@ import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.BooleanAttribute;
 
 public class ALObjects {
 
