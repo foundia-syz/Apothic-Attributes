@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import dev.shadowsoffire.apothic_attributes.client.AttributesLibClient;
 import dev.shadowsoffire.apothic_attributes.impl.AttributeEvents;
+import dev.shadowsoffire.apothic_attributes.payload.ConfigPayload;
 import dev.shadowsoffire.apothic_attributes.payload.CritParticlePayload;
 import dev.shadowsoffire.apothic_attributes.util.MiscDatagen;
 import dev.shadowsoffire.placebo.network.PayloadHelper;
@@ -77,6 +78,7 @@ public class ApothicAttributes {
             // MobEffects.SLOW_FALLING.addAttributeModifier(ForgeMod.ENTITY_GRAVITY.get(), "A5B6CF2A-2F7C-31EF-9022-7C3E7D5E6ABA", -0.07, Operation.ADDITION);
             // }
         });
+        PayloadHelper.registerPayload(new ConfigPayload.Provider());
     }
 
     // TODO - Update impls to reflect new default values.

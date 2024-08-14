@@ -19,6 +19,7 @@ public class ALConfig {
     public static boolean enableAttributesGui = true;
     public static boolean enablePotionTooltips = true;
     public static Set<ResourceLocation> hiddenAttributes = new HashSet<>();
+    public static float knowledgeMultiplier = 4.0F;
 
     private static Optional<Expression> protExpr;
     private static Optional<Expression> aValueExpr;
@@ -26,9 +27,10 @@ public class ALConfig {
 
     public static void load() {
         Configuration cfg = new Configuration(ApothicAttributes.getConfigFile(ApothicAttributes.MODID));
-        enableAttributesGui = cfg.getBoolean("Enable Attributes GUI", "general", true, "If the Attributes GUI is available.");
-        enablePotionTooltips = cfg.getBoolean("Enable Potion Tooltips", "general", true, "If description tooltips will be added to potion items.");
-        String[] hidden = cfg.getStringList("Hidden Attributes", "general", DEFAULT_BLOCKED_ATTRIBUTES, "A list of attributes that will be hidden from the Attributes GUI.");
+        enableAttributesGui = cfg.getBoolean("Enable Attributes GUI", "general", true, "If the Attributes GUI is available.\nClient-authoritative.");
+        enablePotionTooltips = cfg.getBoolean("Enable Potion Tooltips", "general", true, "If description tooltips will be added to potion items.\nClient-authoritative.");
+        knowledgeMultiplier = cfg.getFloat("Ancient Knowledge Multiplier", "effects", 4.0F, 1.0F, 1024F, "The value (per-level) of the Experience Gained attribute modifier provided by Ancient Knowledge.\nSynced.");
+        String[] hidden = cfg.getStringList("Hidden Attributes", "general", DEFAULT_BLOCKED_ATTRIBUTES, "A list of attributes that will be hidden from the Attributes GUI.\nClient-authoritative.");
 
         hiddenAttributes.clear();
         for (String name : hidden) {

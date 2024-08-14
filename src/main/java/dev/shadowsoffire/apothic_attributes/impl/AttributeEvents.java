@@ -8,6 +8,7 @@ import dev.shadowsoffire.apothic_attributes.api.ALObjects;
 import dev.shadowsoffire.apothic_attributes.api.AttributeHelper;
 import dev.shadowsoffire.apothic_attributes.commands.BonusModifierCommand;
 import dev.shadowsoffire.apothic_attributes.event.ApotheosisCommandEvent;
+import dev.shadowsoffire.apothic_attributes.payload.ConfigPayload;
 import dev.shadowsoffire.apothic_attributes.payload.CritParticlePayload;
 import dev.shadowsoffire.apothic_attributes.util.AttributesUtil;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -43,6 +44,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
@@ -372,6 +374,16 @@ public class AttributeEvents {
     @SubscribeEvent
     public void cmds(ApotheosisCommandEvent e) {
         BonusModifierCommand.register(e.getRoot());
+    }
+
+    @SubscribeEvent
+    public void sync(OnDatapackSyncEvent e) {
+        if (e.getPlayer() != null) {
+            PacketDistributor.sendToPlayer(e.getPlayer(), new ConfigPayload());
+        }
+        else {
+            PacketDistributor.sendToAllPlayers(new ConfigPayload());
+        }
     }
 
     /**
