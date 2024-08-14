@@ -46,7 +46,7 @@ public class ApothicAttributes {
     public static final String MODID = "apothic_attributes";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
     public static final DeferredHelper R = DeferredHelper.create(MODID);
-    private static final File configDir = new File(FMLPaths.CONFIGDIR.get().toFile(), MODID);
+    private static final File configDir = new File(FMLPaths.CONFIGDIR.get().toFile(), "apotheosis");
 
     /**
      * Static record of {@link Player#getAttackStrengthScale(float)} for use in damage events.<br>
