@@ -1,3 +1,11 @@
+## 2.3.0
+* Updated to Minecraft 1.21.1.
+* Removed AA's internal `BooleanAttribute` in favor of the one provided by NeoForge.
+  * A mixin was added to preserve the attribute formatting behavior from AA's original.
+* Fixed the config directory being named `apothic_attributes` instead of `apotheosis`.
+  * This will invalidate some existing config files, so please move your originals appropriately.
+* Added a config option for Ancient Knowledge's experience gain value.
+
 ## 2.2.2
 * Updated to Placebo 9.3.5.
 
