@@ -321,6 +321,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void renderEntry(GuiGraphics gfx, AttributeInstance inst, int x, int y, int mouseX, int mouseY) {
         boolean hover = this.getHoveredSlot(mouseX, mouseY) == inst;
         gfx.blit(TEXTURES, x, y, 142, hover ? ENTRY_HEIGHT : 0, 100, ENTRY_HEIGHT);
