@@ -1,3 +1,7 @@
+## 1.3.7
+* Made armor toughness a variable in the configurable armor damage reduction formula. Also provided a reference for the vanilla formula in the evalex format.
+* Quark: Updated Russian translation.
+
 ## 1.3.6
 * Fixed the random seed selection for Dodge Chance to be properly random.
   * The prior seed selection would cause non-uniform values to be selected, causing players to dodge or not dodge for long periods of time.
