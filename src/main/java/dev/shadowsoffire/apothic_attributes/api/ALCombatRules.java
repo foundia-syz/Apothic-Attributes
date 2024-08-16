@@ -97,7 +97,7 @@ public class ALCombatRules {
             return amount;
         }
 
-        float reduction = getArmorDamageReduction(amount, armor);
+        float reduction = getArmorDamageReduction(amount, armor, toughness);
         if (src.getWeaponItem() != null && target.level() instanceof ServerLevel serverlevel) {
             // Normally we just work with the reduction, or the multiplier on the final damage value.
             // However, the vanilla ARMOR_EFFECTIVENESS enchantment effect works on the "effectiveness", which is how much damage the armor would block.
@@ -139,10 +139,15 @@ public class ALCombatRules {
      * @see #getAValue(float)
      * @see #getDamageAfterArmor(LivingEntity, DamageSource, float, float, float)
      */
-    public static float getArmorDamageReduction(float damage, float armor) {
+    public static float getArmorDamageReduction(float damage, float armor, float toughness) {
         float a = getAValue(damage);
         if (ALConfig.getArmorExpr().isPresent()) {
-            return ALConfig.getArmorExpr().get().setVariable("a", new BigDecimal(a)).setVariable("damage", new BigDecimal(damage)).setVariable("armor", new BigDecimal(armor)).eval().floatValue();
+            return ALConfig.getArmorExpr().get()
+                .setVariable("a", new BigDecimal(a))
+                .setVariable("damage", new BigDecimal(damage))
+                .setVariable("armor", new BigDecimal(armor))
+                .setVariable("toughness", new BigDecimal(toughness))
+                .eval().floatValue();
         }
         return a / (a + armor);
     }
