@@ -5,12 +5,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
 
-import dev.shadowsoffire.apothic_attributes.util.Comparators;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -19,25 +16,28 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.neoforged.neoforge.common.util.AttributeUtil;
 
 public class AttributeHelper {
 
     /**
      * UUID of the base modifier for Attack Damage
      */
-    public static final ResourceLocation BASE_ATTACK_DAMAGE = Item.BASE_ATTACK_DAMAGE_ID;
+    @Deprecated
+    public static final ResourceLocation BASE_ATTACK_DAMAGE = AttributeUtil.BASE_ATTACK_DAMAGE_ID;
 
     /**
      * UUID of the base modifier for Attack Speed
      */
-    public static final ResourceLocation BASE_ATTACK_SPEED = Item.BASE_ATTACK_SPEED_ID;
+    @Deprecated
+    public static final ResourceLocation BASE_ATTACK_SPEED = AttributeUtil.BASE_ATTACK_SPEED_ID;
 
     /**
      * UUID of the base modifier for Attack Range
      */
-    public static final ResourceLocation BASE_ENTITY_REACH = ResourceLocation.withDefaultNamespace("base_entity_reach");
+    @Deprecated
+    public static final ResourceLocation BASE_ENTITY_REACH = AttributeUtil.BASE_ENTITY_REACH_ID;
 
     /**
      * A brief explanation of {@link Operation} and Attribute calculations:
@@ -96,15 +96,14 @@ public class AttributeHelper {
         modify(entity, attribute, id, modifier, Operation.ADD_MULTIPLIED_TOTAL);
     }
 
+    @Deprecated
     public static Multimap<Holder<Attribute>, AttributeModifier> sortedMap() {
-        return TreeMultimap.create(Comparator.comparing(Holder::value, Comparators.idComparator(BuiltInRegistries.ATTRIBUTE)), modifierComparator());
+        return AttributeUtil.sortedMap();
     }
 
+    @Deprecated
     public static Comparator<AttributeModifier> modifierComparator() {
-        return Comparators.chained(
-            Comparator.comparing(AttributeModifier::operation),
-            Comparator.comparing(AttributeModifier::amount),
-            Comparator.comparing(AttributeModifier::id));
+        return AttributeUtil.ATTRIBUTE_MODIFIER_COMPARATOR;
     }
 
     /**

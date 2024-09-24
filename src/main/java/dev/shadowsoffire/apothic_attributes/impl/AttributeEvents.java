@@ -42,6 +42,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.AttributeUtil;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
@@ -346,11 +347,11 @@ public class AttributeEvents {
      */
     @SubscribeEvent(priority = EventPriority.LOW)
     public void affixModifiers(ItemAttributeModifierEvent e) {
-        boolean hasBaseAD = AttributeHelper.getModifiers(e.getModifiers(), Attributes.ATTACK_DAMAGE).filter(entry -> entry.modifier().id().equals(AttributeHelper.BASE_ATTACK_DAMAGE)).findAny().isPresent();
+        boolean hasBaseAD = AttributeHelper.getModifiers(e.getModifiers(), Attributes.ATTACK_DAMAGE).filter(entry -> entry.modifier().id().equals(AttributeUtil.BASE_ATTACK_DAMAGE_ID)).findAny().isPresent();
         if (hasBaseAD) {
-            boolean hasBaseAR = AttributeHelper.getModifiers(e.getModifiers(), Attributes.ENTITY_INTERACTION_RANGE).filter(entry -> entry.modifier().id().equals(AttributeHelper.BASE_ENTITY_REACH)).findAny().isPresent();
+            boolean hasBaseAR = AttributeHelper.getModifiers(e.getModifiers(), Attributes.ENTITY_INTERACTION_RANGE).filter(entry -> entry.modifier().id().equals(AttributeUtil.BASE_ENTITY_REACH_ID)).findAny().isPresent();
             if (!hasBaseAR) {
-                e.addModifier(Attributes.ENTITY_INTERACTION_RANGE, new AttributeModifier(AttributeHelper.BASE_ENTITY_REACH, 0, Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND);
+                e.addModifier(Attributes.ENTITY_INTERACTION_RANGE, new AttributeModifier(AttributeUtil.BASE_ENTITY_REACH_ID, 0, Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND);
             }
         }
 

@@ -37,6 +37,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.NeoForgeMod;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
@@ -67,6 +68,7 @@ public class ApothicAttributes {
         PayloadHelper.registerPayload(new CritParticlePayload.Provider());
         ALObjects.bootstrap(bus);
         ALConfig.load();
+        NeoForgeMod.enableMergedAttributeTooltips();
     }
 
     @SubscribeEvent

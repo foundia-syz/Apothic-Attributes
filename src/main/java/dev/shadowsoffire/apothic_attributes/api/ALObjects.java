@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
 
 import dev.shadowsoffire.apothic_attributes.ApothicAttributes;
-import dev.shadowsoffire.apothic_attributes.impl.PercentBasedAttribute;
 import dev.shadowsoffire.apothic_attributes.mob_effect.BleedingEffect;
 import dev.shadowsoffire.apothic_attributes.mob_effect.DetonationEffect;
 import dev.shadowsoffire.apothic_attributes.mob_effect.FlyingEffect;
@@ -32,6 +31,7 @@ import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.BooleanAttribute;
+import net.neoforged.neoforge.common.PercentageAttribute;
 
 public class ALObjects {
 
@@ -45,19 +45,19 @@ public class ALObjects {
         /**
          * Percentage armor reduction. Base value = (0.0) = 0% of armor reduced during damage calculations.
          */
-        public static final Holder<Attribute> ARMOR_SHRED = R.attribute("armor_shred", () -> new PercentBasedAttribute("apothic_attributes:armor_shred", 0.0D, 0.0D, 2.0D).setSyncable(true));
+        public static final Holder<Attribute> ARMOR_SHRED = R.attribute("armor_shred", () -> new PercentageAttribute("apothic_attributes:armor_shred", 0.0D, 0.0D, 2.0D).setSyncable(true));
 
         /**
          * Arrow Damage. Base value = (1.0) = 100% default arrow damage
          */
-        public static final Holder<Attribute> ARROW_DAMAGE = R.attribute("arrow_damage", () -> new PercentBasedAttribute("apothic_attributes:arrow_damage", 1.0D, 0.0D, 10.0D).setSyncable(true));
+        public static final Holder<Attribute> ARROW_DAMAGE = R.attribute("arrow_damage", () -> new PercentageAttribute("apothic_attributes:arrow_damage", 1.0D, 0.0D, 10.0D).setSyncable(true));
 
         /**
          * Arrow Velocity. Base value = (1.0) = 100% default arrow velocity
          * <p>
          * Arrow damage scales with the velocity as well as {@link #ARROW_DAMAGE} and the base damage of the arrow entity.
          */
-        public static final Holder<Attribute> ARROW_VELOCITY = R.attribute("arrow_velocity", () -> new PercentBasedAttribute("apothic_attributes:arrow_velocity", 1.0D, 0.0D, 10.0D).setSyncable(true));
+        public static final Holder<Attribute> ARROW_VELOCITY = R.attribute("arrow_velocity", () -> new PercentageAttribute("apothic_attributes:arrow_velocity", 1.0D, 0.0D, 10.0D).setSyncable(true));
 
         /**
          * Bonus magic damage that slows enemies hit. Base value = (0.0) = 0 damage
@@ -68,18 +68,18 @@ public class ALObjects {
          * Chance that any attack will critically strike. Base value = (0.05) = 5% chance to critically strike.<br>
          * Not related to vanilla (jump) critical strikes.
          */
-        public static final Holder<Attribute> CRIT_CHANCE = R.attribute("crit_chance", () -> new PercentBasedAttribute("apothic_attributes:crit_chance", 0.05D, 0.0D, 10.0D).setSyncable(true));
+        public static final Holder<Attribute> CRIT_CHANCE = R.attribute("crit_chance", () -> new PercentageAttribute("apothic_attributes:crit_chance", 0.05D, 0.0D, 10.0D).setSyncable(true));
 
         /**
          * Amount of damage caused by critical strikes. Base value = (1.5) = 150% normal damage dealt.<br>
          * Also impacts vanilla (jump) critical strikes.
          */
-        public static final Holder<Attribute> CRIT_DAMAGE = R.attribute("crit_damage", () -> new PercentBasedAttribute("apothic_attributes:crit_damage", 1.5D, 1.0D, 100.0D).setSyncable(true));
+        public static final Holder<Attribute> CRIT_DAMAGE = R.attribute("crit_damage", () -> new PercentageAttribute("apothic_attributes:crit_damage", 1.5D, 1.0D, 100.0D).setSyncable(true));
 
         /**
          * Bonus physical damage dealt equal to enemy's current health. Base value = (0.0) = 0%
          */
-        public static final Holder<Attribute> CURRENT_HP_DAMAGE = R.attribute("current_hp_damage", () -> new PercentBasedAttribute("apothic_attributes:current_hp_damage", 0.0D, 0.0D, 1.0D).setSyncable(true));
+        public static final Holder<Attribute> CURRENT_HP_DAMAGE = R.attribute("current_hp_damage", () -> new PercentageAttribute("apothic_attributes:current_hp_damage", 0.0D, 0.0D, 1.0D).setSyncable(true));
 
         /**
          * Chance to dodge incoming melee damage. Base value = (0.0) = 0% chance to dodge.<br>
@@ -87,17 +87,17 @@ public class ALObjects {
          * <p>
          * This includes projectile attacks, as long as the projectile actually impacts the player.
          */
-        public static final Holder<Attribute> DODGE_CHANCE = R.attribute("dodge_chance", () -> new PercentBasedAttribute("apothic_attributes:dodge_chance", 0.0D, 0.0D, 1.0D).setSyncable(true));
+        public static final Holder<Attribute> DODGE_CHANCE = R.attribute("dodge_chance", () -> new PercentageAttribute("apothic_attributes:dodge_chance", 0.0D, 0.0D, 1.0D).setSyncable(true));
 
         /**
          * How fast a ranged weapon is charged. Base Value = (1.0) = 100% default draw speed.
          */
-        public static final Holder<Attribute> DRAW_SPEED = R.attribute("draw_speed", () -> new PercentBasedAttribute("apothic_attributes:draw_speed", 1.0D, 0.0D, 4.0D).setSyncable(true));
+        public static final Holder<Attribute> DRAW_SPEED = R.attribute("draw_speed", () -> new PercentageAttribute("apothic_attributes:draw_speed", 1.0D, 0.0D, 4.0D).setSyncable(true));
 
         /**
          * Experience mulitplier, from killing mobs or breaking ores. Base value = (1.0) = 100% xp gained.
          */
-        public static final Holder<Attribute> EXPERIENCE_GAINED = R.attribute("experience_gained", () -> new PercentBasedAttribute("apothic_attributes:experience_gained", 1.0D, 0.0D, 1000.0D).setSyncable(true));
+        public static final Holder<Attribute> EXPERIENCE_GAINED = R.attribute("experience_gained", () -> new PercentageAttribute("apothic_attributes:experience_gained", 1.0D, 0.0D, 1000.0D).setSyncable(true));
 
         /**
          * Bonus magic damage that burns enemies hit. Base value = (0.0) = 0 damage
@@ -112,22 +112,22 @@ public class ALObjects {
         /**
          * Adjusts all healing received. Base value = (1.0) = 100% xp gained.
          */
-        public static final Holder<Attribute> HEALING_RECEIVED = R.attribute("healing_received", () -> new PercentBasedAttribute("apothic_attributes:healing_received", 1.0D, 0.0D, 1000.0D).setSyncable(true));
+        public static final Holder<Attribute> HEALING_RECEIVED = R.attribute("healing_received", () -> new PercentageAttribute("apothic_attributes:healing_received", 1.0D, 0.0D, 1000.0D).setSyncable(true));
 
         /**
          * Percent of physical damage converted to health. Base value = (0.0) = 0%
          */
-        public static final Holder<Attribute> LIFE_STEAL = R.attribute("life_steal", () -> new PercentBasedAttribute("apothic_attributes:life_steal", 0.0D, 0.0D, 10.0D).setSyncable(true));
+        public static final Holder<Attribute> LIFE_STEAL = R.attribute("life_steal", () -> new PercentageAttribute("apothic_attributes:life_steal", 0.0D, 0.0D, 10.0D).setSyncable(true));
 
         /**
          * Mining Speed. Base value = (1.0) = 100% default break speed
          */
-        public static final Holder<Attribute> MINING_SPEED = R.attribute("mining_speed", () -> new PercentBasedAttribute("apothic_attributes:mining_speed", 1.0D, 0.0D, 10.0D).setSyncable(true));
+        public static final Holder<Attribute> MINING_SPEED = R.attribute("mining_speed", () -> new PercentageAttribute("apothic_attributes:mining_speed", 1.0D, 0.0D, 10.0D).setSyncable(true));
 
         /**
          * Percent of physical damage converted to absorption hearts. Base value = (0.0) = 0%
          */
-        public static final Holder<Attribute> OVERHEAL = R.attribute("overheal", () -> new PercentBasedAttribute("apothic_attributes:overheal", 0.0D, 0.0D, 10.0D).setSyncable(true));
+        public static final Holder<Attribute> OVERHEAL = R.attribute("overheal", () -> new PercentageAttribute("apothic_attributes:overheal", 0.0D, 0.0D, 10.0D).setSyncable(true));
 
         /**
          * Flat protection penetration. Base value = (0.0) = 0 protection points bypassed during damage calculations.
@@ -137,7 +137,7 @@ public class ALObjects {
         /**
          * Percentage protection reduction. Base value = (0.0) = 0% of protection points bypassed during damage calculations.
          */
-        public static final Holder<Attribute> PROT_SHRED = R.attribute("prot_shred", () -> new PercentBasedAttribute("apothic_attributes:prot_shred", 0.0D, 0.0D, 1.0D).setSyncable(true));
+        public static final Holder<Attribute> PROT_SHRED = R.attribute("prot_shred", () -> new PercentageAttribute("apothic_attributes:prot_shred", 0.0D, 0.0D, 1.0D).setSyncable(true));
 
         /**
          * Boolean attribute for if elytra flight is enabled. Default value = false.

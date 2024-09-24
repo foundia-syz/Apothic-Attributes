@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import dev.shadowsoffire.apothic_attributes.api.AttributeHelper;
 import dev.shadowsoffire.apothic_attributes.client.ModifierSource.EffectModifierSource;
 import dev.shadowsoffire.apothic_attributes.client.ModifierSource.ItemModifierSource;
 import dev.shadowsoffire.apothic_attributes.util.Comparators;
@@ -18,6 +17,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.common.util.AttributeUtil;
 
 /**
  * A Modifier Source Type is a the registration component of a ModifierSource.
@@ -79,7 +79,7 @@ public abstract class ModifierSourceType<T> {
         Comparator<AttributeModifier> comp = Comparators.chained(
             Comparator.comparingInt(a -> sources.get(a.id()).getType().getPriority()),
             Comparator.comparing(a -> sources.get(a.id())),
-            AttributeHelper.modifierComparator());
+            AttributeUtil.ATTRIBUTE_MODIFIER_COMPARATOR);
 
         return (a1, a2) -> {
             var src1 = sources.get(a1.id());

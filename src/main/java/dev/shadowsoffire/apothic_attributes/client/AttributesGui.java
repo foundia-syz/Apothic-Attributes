@@ -16,7 +16,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.shadowsoffire.apothic_attributes.ALConfig;
 import dev.shadowsoffire.apothic_attributes.ApothicAttributes;
 import dev.shadowsoffire.apothic_attributes.api.ALObjects;
-import dev.shadowsoffire.apothic_attributes.api.IFormattableAttribute;
 import dev.shadowsoffire.placebo.PlaceboClient;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -51,6 +50,7 @@ import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.TooltipFlag;
 import net.neoforged.neoforge.common.BooleanAttribute;
+import net.neoforged.neoforge.common.extensions.IAttributeExtension;
 
 public class AttributesGui implements Renderable, GuiEventListener {
 
@@ -191,7 +191,6 @@ public class AttributesGui implements Renderable, GuiEventListener {
             Attribute attr = inst.getAttribute().value();
             boolean isDynamic = inst.getAttribute().is(ALObjects.Tags.DYNAMIC_BASE_ATTRIBUTES);
 
-            IFormattableAttribute fAttr = (IFormattableAttribute) attr;
             List<Component> list = new ArrayList<>();
             MutableComponent name = Component.translatable(attr.getDescriptionId()).withStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).withUnderlined(true));
 
@@ -220,8 +219,8 @@ public class AttributesGui implements Renderable, GuiEventListener {
 
             int color = getValueColor(inst, ChatFormatting.GRAY.getColor());
 
-            Component valueComp = fAttr.toValueComponent(null, inst.getValue(), ApothicAttributes.getTooltipFlag()).withColor(color);
-            Component baseComp = fAttr.toValueComponent(null, inst.getBaseValue(), ApothicAttributes.getTooltipFlag()).withStyle(ChatFormatting.GRAY);
+            Component valueComp = attr.toValueComponent(null, inst.getValue(), ApothicAttributes.getTooltipFlag()).withColor(color);
+            Component baseComp = attr.toValueComponent(null, inst.getBaseValue(), ApothicAttributes.getTooltipFlag()).withStyle(ChatFormatting.GRAY);
 
             if (!isDynamic) {
                 list.add(CommonComponents.EMPTY);
@@ -230,9 +229,9 @@ public class AttributesGui implements Renderable, GuiEventListener {
                 Component base = Component.translatable("apothic_attributes.gui.base", baseComp).withStyle(ChatFormatting.GRAY);
 
                 if (attr instanceof RangedAttribute ra) {
-                    Component min = fAttr.toValueComponent(null, ra.getMinValue(), ApothicAttributes.getTooltipFlag());
+                    Component min = attr.toValueComponent(null, ra.getMinValue(), ApothicAttributes.getTooltipFlag());
                     min = Component.translatable("apothic_attributes.gui.min", min);
-                    Component max = fAttr.toValueComponent(null, ra.getMaxValue(), ApothicAttributes.getTooltipFlag());
+                    Component max = attr.toValueComponent(null, ra.getMaxValue(), ApothicAttributes.getTooltipFlag());
                     max = Component.translatable("apothic_attributes.gui.max", max);
                     list.add(Component.translatable("%s \u2507 %s \u2507 %s", base, min, max).withStyle(ChatFormatting.GRAY));
                 }
@@ -267,14 +266,14 @@ public class AttributesGui implements Renderable, GuiEventListener {
                     modifiers.sort(ModifierSourceType.compareBySource(modifiersToSources));
                     for (AttributeModifier modif : modifiers) {
                         if (modif.amount() != 0) {
-                            Component comp = fAttr.toComponent(modif, ApothicAttributes.getTooltipFlag());
+                            Component comp = attr.toComponent(modif, ApothicAttributes.getTooltipFlag());
                             var src = modifiersToSources.get(modif.id());
                             finalTooltip.add(new AttributeModifierComponent(src, comp, this.font, this.leftPos - 16));
                         }
                     }
 
                     color = getValueColor(attr, opValue, baseValue, ChatFormatting.GRAY.getColor());
-                    Component valueComp2 = fAttr.toValueComponent(op, opValue, ApothicAttributes.getTooltipFlag()).withStyle(Style.EMPTY.withColor(color));
+                    Component valueComp2 = attr.toValueComponent(op, opValue, ApothicAttributes.getTooltipFlag()).withStyle(Style.EMPTY.withColor(color));
                     MutableComponent comp = Component.translatable("apothic_attributes.gui." + op.name().toLowerCase(Locale.ROOT), valueComp2).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
                     opValues[op.ordinal()] = comp;
@@ -343,8 +342,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         stack.popPose();
         stack.pushPose();
 
-        var attr = IFormattableAttribute.cast(inst.getAttribute());
-        MutableComponent value = attr.toValueComponent(null, inst.getValue(), TooltipFlag.Default.NORMAL);
+        MutableComponent value = inst.getAttribute().value().toValueComponent(null, inst.getValue(), TooltipFlag.Default.NORMAL);
 
         if (inst.getAttribute().is(ALObjects.Tags.DYNAMIC_BASE_ATTRIBUTES)) {
             value = Component.literal("\uFFFD");
@@ -434,7 +432,7 @@ public class AttributesGui implements Renderable, GuiEventListener {
         return pMouseX >= pX - 1 && pMouseX < pX + pWidth + 1 && pMouseY >= pY - 1 && pMouseY < pY + pHeight + 1;
     }
 
-    private static DecimalFormat f = IFormattableAttribute.FORMAT;
+    private static DecimalFormat f = IAttributeExtension.FORMAT;
 
     public static String format(int n) {
         int log = (int) StrictMath.log10(n);

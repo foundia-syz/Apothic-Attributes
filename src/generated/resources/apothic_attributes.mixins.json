@@ -5,16 +5,12 @@
     "refmap": "apothic_attributes.refmap.json",
     "maxShiftBy": 5,
     "mixins": [
-        "AttributeMixin",
-        "BooleanAttributeMixin",
         "CombatRulesMixin",
         "EntityMixin",
         "IItemExtensionMixin",
-        "ItemStackMixin",
         "LivingEntityMixin",
         "NearestAttackableTargetGoalMixin",
         "PlayerMixin",
-        "PotionContentsMixin",
         "ThrownTridentMixin"
     ],
     "client": [
