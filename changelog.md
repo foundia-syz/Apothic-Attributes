@@ -1,3 +1,8 @@
+## 2.4.0
+* `IFormattableAttribute`, `GatherSkippedAttributeTooltipsEvent`, and `AddAttributeTooltipsEvent` have all been removed.
+  * These were added to NeoForge in 21.1.60.
+* Apothic Attributes enables NeoForge attribute tooltip merging.
+
 ## 2.3.0
 * Updated to Minecraft 1.21.1.
 * Removed AA's internal `BooleanAttribute` in favor of the one provided by NeoForge.
